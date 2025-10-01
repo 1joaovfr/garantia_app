@@ -1,14 +1,15 @@
+# database/setup.py
 import sqlite3
 from config import DB_NAME
 
 def criar_banco_de_dados():
-    """Cria a estrutura inicial do banco de dados, se as tabelas não existirem."""
+    """Cria a estrutura inicial do banco de dados com a nova estrutura da tabela Clientes."""
     try:
         with sqlite3.connect(DB_NAME) as conn:
             cursor = conn.cursor()
             print(f"Banco de dados '{DB_NAME}' conectado com sucesso.")
 
-            # Tabela 1: Empresas (para o dropdown)
+            # Tabela 1: Empresas (Mantenha o conteúdo original)
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS Empresas (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -17,17 +18,20 @@ def criar_banco_de_dados():
                 )
             ''')
 
-            # Tabela 2: Clientes
+            # Tabela 2: Clientes (Com a nova estrutura definitiva)
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS Clientes (
                     cnpj TEXT PRIMARY KEY,
                     codigo_cliente TEXT,
-                    nome_cliente TEXT,
+                    cliente TEXT,
+                    cidade TEXT,
+                    estado TEXT,
+                    regioes TEXT,
                     grupo_cliente TEXT
                 )
             ''')
 
-            # Tabela 3: Produtos
+            # Tabela 3: Produtos (Mantenha o conteúdo original)
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS Produtos (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -37,7 +41,7 @@ def criar_banco_de_dados():
                 )
             ''')
 
-            # Tabela 4: Códigos de Avaria
+            # Tabela 4: Códigos de Avaria (Mantenha o conteúdo original)
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS CodigosAvaria (
                     codigo TEXT PRIMARY KEY,
@@ -46,8 +50,8 @@ def criar_banco_de_dados():
                     grupo_relacionado TEXT
                 )
             ''')
-
-            # Tabela 5: Notas Fiscais (Transacional)
+            
+            # Tabela 5: Notas Fiscais (Mantenha o conteúdo original)
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS NotasFiscais (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -59,7 +63,7 @@ def criar_banco_de_dados():
                 )
             ''')
 
-            # Tabela 6: Itens da Garantia (Transacional Principal)
+            # Tabela 6: Itens da Garantia (Mantenha o conteúdo original)
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS ItensGarantia (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -80,12 +84,12 @@ def criar_banco_de_dados():
                     FOREIGN KEY (codigo_avaria) REFERENCES CodigosAvaria (codigo)
                 )
             ''')
-            
+
             conn.commit()
-            print("Estrutura do banco de dados criada/verificada com sucesso!")
+            print("Estrutura do banco de dados verificada/criada com sucesso!")
 
     except sqlite3.Error as e:
-        print(f"Ocorreu um erro ao criar o banco de dados: {e}")
+        print(f"Ocorreu um erro com o banco de dados: {e}")
 
 if __name__ == "__main__":
     criar_banco_de_dados()

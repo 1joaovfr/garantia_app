@@ -10,5 +10,6 @@ def find_by_cnpj(cnpj):
 def get_all_nomes():
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT DISTINCT nome_cliente FROM Clientes ORDER BY nome_cliente")
+        # Alterado de 'nome_cliente' para 'cliente'
+        cursor.execute("SELECT DISTINCT cliente FROM Clientes ORDER BY cliente")
         return [row[0] for row in cursor.fetchall()]

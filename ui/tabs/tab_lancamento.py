@@ -87,8 +87,12 @@ class LancamentoTab(ttk.Frame):
         cnpj = self.cnpj_entry.get().strip()
         if not cnpj: return
         cliente = cliente_repository.find_by_cnpj(cnpj)
-        nome = cliente['nome_cliente'] if cliente else "CNPJ não encontrado!"
-        self.razao_social_entry.config(state="normal"); self.razao_social_entry.delete(0, END); self.razao_social_entry.insert(0, nome); self.razao_social_entry.config(state="readonly")
+        # Alterado de 'nome_cliente' para 'cliente'
+        nome = cliente['cliente'] if cliente else "CNPJ não encontrado!"
+        self.razao_social_entry.config(state="normal")
+        self.razao_social_entry.delete(0, END)
+        self.razao_social_entry.insert(0, nome)
+        self.razao_social_entry.config(state="readonly")
 
     def _toggle_ressarcimento_entry(self):
         if self.ressarc_check_var.get():

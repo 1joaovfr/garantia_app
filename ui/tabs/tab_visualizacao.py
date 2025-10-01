@@ -48,14 +48,15 @@ class VisualizacaoTab(ttk.Frame):
         self.aplicar_filtros()
 
     def aplicar_filtros(self):
-        filtros = {'cnpj': self.filtro_cnpj.get(), 'razao_social': self.filtro_razao.get(), 'numero_nota': self.filtro_nota.get(), 'status': self.filtro_status.get()}
-        for i in self.tree.get_children(): self.tree.delete(i)
-        resultados = garantia_repository.find_by_filters(filtros)
-        for item in resultados:
-            data = datetime.strptime(item['data_nota'], '%Y-%m-%d').strftime('%d/%m/%Y')
-            valor = f"R$ {item['valor_item']:.2f}" if item['valor_item'] is not None else '-'
-            ressarc = f"R$ {float(item['ressarcimento']):.2f}" if item.get('ressarcimento') and item['ressarcimento'].replace('.','',1).isdigit() else "-"
-            self.tree.insert("", END, values=(item['id'], item['numero_nota'], data, item['cnpj'], item['nome_cliente'], item['codigo_analise'] or '-', item['codigo_produto'], valor, item['status'], item['procedente_improcedente'] or '-', ressarc))
+            filtros = {'cnpj': self.filtro_cnpj.get(), 'razao_social': self.filtro_razao.get(), 'numero_nota': self.filtro_nota.get(), 'status': self.filtro_status.get()}
+            for i in self.tree.get_children(): self.tree.delete(i)
+            resultados = garantia_repository.find_by_filters(filtros)
+            for item in resultados:
+                data = datetime.strptime(item['data_nota'], '%Y-%m-%d').strftime('%d/%m/%Y')
+                valor = f"R$ {item['valor_item']:.2f}" if item['valor_item'] is not None else '-'
+                ressarc = f"R$ {float(item['ressarcimento']):.2f}" if item.get('ressarcimento') and item['ressarcimento'].replace('.','',1).isdigit() else "-"
+                # Alterado de item['nome_cliente'] para item['cliente']
+                self.tree.insert("", END, values=(item['id'], item['numero_nota'], data, item['cnpj'], item['cliente'], item['codigo_analise'] or '-', item['codigo_produto'], valor, item['status'], item['procedente_improcedente'] or '-', ressarc))
 
     def _limpar_filtros(self):
         self.filtro_cnpj.delete(0, END); self.filtro_razao.delete(0, END); self.filtro_nota.delete(0, END); self.filtro_status.set("Todos")

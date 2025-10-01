@@ -5,7 +5,7 @@ def find_itens_pendentes():
         cursor = conn.cursor()
         query = """
             SELECT ig.id, ig.codigo_analise, nf.numero_nota, nf.data_nota,
-                   c.nome_cliente, ig.codigo_produto, ig.ressarcimento
+                   c.cliente, ig.codigo_produto, ig.ressarcimento -- ALTERADO AQUI
             FROM ItensGarantia ig
             JOIN NotasFiscais nf ON ig.id_nota_fiscal = nf.id
             JOIN Clientes c ON nf.cnpj_cliente = c.cnpj
@@ -18,7 +18,7 @@ def find_by_filters(filtros):
     with get_db_connection() as conn:
         cursor = conn.cursor()
         query = """
-            SELECT ig.id, nf.numero_nota, nf.data_nota, c.cnpj, c.nome_cliente,
+            SELECT ig.id, nf.numero_nota, nf.data_nota, c.cnpj, c.cliente, -- ALTERADO AQUI
                    ig.codigo_analise, ig.codigo_produto, ig.status, 
                    ig.procedente_improcedente, ig.valor_item, ig.ressarcimento
             FROM ItensGarantia ig
@@ -30,7 +30,8 @@ def find_by_filters(filtros):
             condicoes.append("c.cnpj LIKE ?")
             parametros.append(f"%{filtros['cnpj']}%")
         if filtros['razao_social']:
-            condicoes.append("c.nome_cliente LIKE ?")
+            # Alterado de 'nome_cliente' para 'cliente'
+            condicoes.append("c.cliente LIKE ?")
             parametros.append(f"%{filtros['razao_social']}%")
         if filtros['numero_nota']:
             condicoes.append("nf.numero_nota LIKE ?")
@@ -74,7 +75,7 @@ def find_all_complete_data_for_gestao(filtros={}):
         cursor = conn.cursor()
         base_query = """
             SELECT ig.id, nf.data_lancamento, nf.numero_nota, nf.data_nota,
-                   c.cnpj, c.nome_cliente, c.grupo_cliente, ig.codigo_analise, 
+                   c.cnpj, c.cliente, c.grupo_cliente, ig.codigo_analise, -- ALTERADO AQUI
                    ig.codigo_produto, p.grupo_estoque, ig.codigo_avaria, ig.valor_item, 
                    ig.status, ig.procedente_improcedente, ig.ressarcimento,
                    ig.numero_serie, ig.fornecedor
@@ -86,7 +87,9 @@ def find_all_complete_data_for_gestao(filtros={}):
         condicoes, parametros = [], []
         if filtros.get('ano'): condicoes.append("STRFTIME('%Y', nf.data_lancamento) = ?"); parametros.append(filtros['ano'])
         if filtros.get('mes'): condicoes.append("STRFTIME('%m', nf.data_lancamento) = ?"); parametros.append(filtros['mes'])
-        if filtros.get('cliente'): condicoes.append("c.nome_cliente = ?"); parametros.append(filtros['cliente'])
+        if filtros.get('cliente'): 
+            # Alterado de 'c.nome_cliente' para 'c.cliente'
+            condicoes.append("c.cliente = ?"); parametros.append(filtros['cliente'])
         if filtros.get('produto'): condicoes.append("ig.codigo_produto = ?"); parametros.append(filtros['produto'])
             
         if condicoes: base_query += " WHERE " + " AND ".join(condicoes)
