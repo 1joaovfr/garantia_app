@@ -72,8 +72,19 @@ class AnaliseTab(ttk.Frame):
         for item in itens:
             data_formatada = datetime.strptime(item['data_nota'], '%Y-%m-%d').strftime('%d/%m/%Y')
             ressarcimento_str = f"R$ {float(item['ressarcimento']):.2f}" if item.get('ressarcimento') and item['ressarcimento'].replace('.','',1).isdigit() else "-"
-            self.tree_analise.insert("", END, values=(item['id'], item['codigo_analise'], item['numero_nota'], item['nome_cliente'], item['codigo_produto'], data_formatada, ressarcimento_str))
-
+            
+            # --- CORREÇÃO AQUI ---
+            # Trocado item['nome_cliente'] para item['cliente'] para corresponder ao banco de dados
+            self.tree_analise.insert("", END, values=(
+                item['id'], 
+                item['codigo_analise'], 
+                item['numero_nota'], 
+                item['cliente'], # <-- ALTERADO AQUI
+                item['codigo_produto'], 
+                data_formatada, 
+                ressarcimento_str
+            ))
+            
     def _on_item_select(self, event=None):
         selecionado = self.tree_analise.focus()
         if not selecionado: return

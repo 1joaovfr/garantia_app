@@ -151,19 +151,26 @@ class GestaoTab(ttk.Frame):
         return label
 
     def _desenhar_grafico(self, parent_frame, sizes, labels, colors):
-        for widget in parent_frame.winfo_children(): widget.destroy()
-        
-        non_zero_data = [(size, label, color) for size, label, color in zip(sizes, labels, colors) if size > 0]
-        if not non_zero_data:
-            ttk.Label(parent_frame, text="Não há dados para exibir.").pack(pady=20, expand=YES)
-            return
+            for widget in parent_frame.winfo_children(): widget.destroy()
+            
+            non_zero_data = [(size, label, color) for size, label, color in zip(sizes, labels, colors) if size > 0]
+            if not non_zero_data:
+                ttk.Label(parent_frame, text="Não há dados para exibir.").pack(pady=20, expand=YES)
+                return
 
-        sizes, labels, colors = zip(*non_zero_data)
-        fig, ax = plt.subplots(figsize=(6, 6), dpi=100)
-        fig.patch.set_facecolor(self.master.style.colors.bg)
-        ax.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90, wedgeprops={'edgecolor': 'white'}, textprops={'color': self.master.style.colors.fg})
-        ax.axis('equal'); fig.tight_layout()
-        
-        canvas = FigureCanvasTkAgg(fig, master=parent_frame)
-        canvas.draw()
-        canvas.get_tk_widget().pack(expand=YES)
+            sizes, labels, colors = zip(*non_zero_data)
+            fig, ax = plt.subplots(figsize=(6, 6), dpi=100)
+            
+            # --- CORREÇÃO AQUI ---
+            # Alterado de self.master para self.main_app para acessar o estilo da janela principal
+            fig.patch.set_facecolor(self.main_app.style.colors.bg)
+            ax.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90, 
+                wedgeprops={'edgecolor': 'white'}, 
+                # --- E AQUI ---
+                textprops={'color': self.main_app.style.colors.fg}) # Também ajustado para self.main_app
+            
+            ax.axis('equal'); fig.tight_layout()
+            
+            canvas = FigureCanvasTkAgg(fig, master=parent_frame)
+            canvas.draw()
+            canvas.get_tk_widget().pack(expand=YES)
