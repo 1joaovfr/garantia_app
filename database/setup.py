@@ -44,7 +44,7 @@ def criar_banco_de_dados():
             # Tabela 4: Códigos de Avaria (Mantenha o conteúdo original)
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS CodigosAvaria (
-                    codigo TEXT PRIMARY KEY,
+                    codigo_avaria TEXT PRIMARY KEY,
                     descricao_tecnica TEXT,
                     classificacao TEXT,
                     grupo_relacionado TEXT
@@ -81,7 +81,8 @@ def criar_banco_de_dados():
                     ressarcimento TEXT,
                     FOREIGN KEY (id_nota_fiscal) REFERENCES NotasFiscais (id) ON DELETE CASCADE,
                     FOREIGN KEY (codigo_produto) REFERENCES Produtos (codigo_item),
-                    FOREIGN KEY (codigo_avaria) REFERENCES CodigosAvaria (codigo)
+                    -- ALTERADO DE 'REFERENCES CodigosAvaria (codigo)'
+                    FOREIGN KEY (codigo_avaria) REFERENCES CodigosAvaria (codigo_avaria)
                 )
             ''')
 
