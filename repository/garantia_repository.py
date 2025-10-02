@@ -73,40 +73,41 @@ def get_all_available_years():
 def find_all_complete_data_for_gestao(filtros={}):
     with get_db_connection() as conn:
         cursor = conn.cursor()
+        ## ALTERADO: A consulta SQL foi atualizada para incluir as novas colunas
         base_query = """
-            SELECT ig.id, nf.data_lancamento, nf.numero_nota, nf.data_nota,
-                   c.cnpj, c.cliente, c.grupo_cliente, ig.codigo_analise, -- ALTERADO AQUI
-                   ig.codigo_produto, p.grupo_estoque, ig.codigo_avaria, ig.valor_item, 
-                   ig.status, ig.procedente_improcedente, ig.ressarcimento,
-                   ig.numero_serie, ig.fornecedor
+            SELECT 
+                ig.id, nf.data_lancamento, nf.numero_nota, nf.data_nota,
+                c.cnpj, c.cliente, c.grupo_cliente, 
+                c.cidade, c.estado, c.regioes, -- ADICIONADAS colunas de Cliente
+                ig.codigo_analise, ig.codigo_produto, p.grupo_estoque, 
+                ig.codigo_avaria, 
+                ca.descricao_tecnica, -- ADICIONADA coluna de CodigosAvaria
+                ig.valor_item, ig.status, ig.procedente_improcedente, 
+                ig.ressarcimento, ig.numero_serie, ig.fornecedor
             FROM ItensGarantia AS ig
             LEFT JOIN NotasFiscais AS nf ON ig.id_nota_fiscal = nf.id
             LEFT JOIN Clientes AS c ON nf.cnpj_cliente = c.cnpj
             LEFT JOIN Produtos AS p ON ig.codigo_produto = p.codigo_item
+            -- ADICIONADO: Novo JOIN para buscar a descrição da avaria
+            LEFT JOIN CodigosAvaria AS ca ON ig.codigo_avaria = ca.codigo_avaria
         """
-        condicoes, parametros = [], []
-        if filtros.get('ano'): condicoes.append("STRFTIME('%Y', nf.data_lancamento) = ?"); parametros.append(filtros['ano'])
-        if filtros.get('mes'): condicoes.append("STRFTIME('%m', nf.data_lancamento) = ?"); parametros.append(filtros['mes'])
-        if filtros.get('cliente'): 
-            # Alterado de 'c.nome_cliente' para 'c.cliente'
-            condicoes.append("c.cliente = ?"); parametros.append(filtros['cliente'])
-        if filtros.get('produto'): condicoes.append("ig.codigo_produto = ?"); parametros.append(filtros['produto'])
-            
-        if condicoes: base_query += " WHERE " + " AND ".join(condicoes)
+        # A query para a tabela não usa mais filtros, então não adicionamos WHERE
         base_query += " ORDER BY nf.data_lancamento DESC, ig.id DESC"
         
-        cursor.execute(base_query, parametros)
+        cursor.execute(base_query)
         return [dict(row) for row in cursor.fetchall()]
-
 def get_stats(filtros={}):
     with get_db_connection() as conn:
         cursor = conn.cursor()
         base_from = "FROM ItensGarantia ig JOIN NotasFiscais nf ON ig.id_nota_fiscal = nf.id LEFT JOIN Clientes c ON nf.cnpj_cliente = c.cnpj"
+        
         condicoes, params = [], []
         if filtros.get('ano'): condicoes.append("STRFTIME('%Y', nf.data_lancamento) = ?"); params.append(filtros['ano'])
         if filtros.get('mes'): condicoes.append("STRFTIME('%m', nf.data_lancamento) = ?"); params.append(filtros['mes'])
-        if filtros.get('cliente'): condicoes.append("c.nome_cliente = ?"); params.append(filtros['cliente'])
-        if filtros.get('produto'): condicoes.append("ig.codigo_produto = ?"); params.append(filtros['produto'])
+        # REMOVIDO: filtro de cliente e produto
+        # ADICIONADO: filtro de grupo
+        if filtros.get('grupo'): condicoes.append("c.grupo_cliente = ?"); params.append(filtros['grupo'])
+        
         where_sql = " AND ".join(condicoes) if condicoes else "1=1"
         
         query = f"""
@@ -121,11 +122,13 @@ def get_ressarcimento_stats(filtros={}):
     with get_db_connection() as conn:
         cursor = conn.cursor()
         base_from = "FROM ItensGarantia ig JOIN NotasFiscais nf ON ig.id_nota_fiscal = nf.id LEFT JOIN Clientes c ON nf.cnpj_cliente = c.cnpj"
+        
         condicoes, params = ["ig.ressarcimento IS NOT NULL", "CAST(ig.ressarcimento AS REAL) > 0"], []
         if filtros.get('ano'): condicoes.append("STRFTIME('%Y', nf.data_lancamento) = ?"); params.append(filtros['ano'])
         if filtros.get('mes'): condicoes.append("STRFTIME('%m', nf.data_lancamento) = ?"); params.append(filtros['mes'])
-        if filtros.get('cliente'): condicoes.append("c.nome_cliente = ?"); params.append(filtros['cliente'])
-        if filtros.get('produto'): condicoes.append("ig.codigo_produto = ?"); params.append(filtros['produto'])
+        # REMOVIDO: filtro de cliente e produto
+        # ADICIONADO: filtro de grupo
+        if filtros.get('grupo'): condicoes.append("c.grupo_cliente = ?"); params.append(filtros['grupo'])
         
         where_sql = " WHERE " + " AND ".join(condicoes)
         query = f"""
