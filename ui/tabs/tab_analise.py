@@ -1,3 +1,4 @@
+# ui/tabs/tab_analise.py
 import tkinter as tk
 from tkinter import ttk, END
 from ttkbootstrap.constants import *
@@ -13,23 +14,29 @@ class AnaliseTab(ttk.Frame):
         self.service = GarantiaService()
         self.id_item_selecionado = None
         self.codigos_avaria_map = {}
-        self._criar_widgets()
+        self._create_widgets()
 
-    def _criar_widgets(self):
+    def _create_widgets(self):
         # Lista de itens pendentes
         lista_frame = ttk.LabelFrame(self, text="Itens Pendentes de Análise", padding=15)
         lista_frame.pack(fill=X, pady=(0, 10))
-        cols = ("id", "analise", "nota", "cliente", "produto", "data", "ressarcimento")
+
+        # Adicionada a coluna 'qtd'
+        cols = ("id", "analise", "nota", "cliente", "produto", "qtd", "data", "ressarcimento")
         self.tree_analise = ttk.Treeview(lista_frame, columns=cols, show="headings", height=12)
+        
         self.tree_analise.heading("id", text="ID"); self.tree_analise.column("id", width=50, anchor=CENTER)
         self.tree_analise.heading("analise", text="Cód. Análise"); self.tree_analise.column("analise", width=100, anchor=CENTER)
         self.tree_analise.heading("nota", text="Nº Nota"); self.tree_analise.column("nota", width=80, anchor=CENTER)
         self.tree_analise.heading("cliente", text="Cliente"); self.tree_analise.column("cliente", width=250)
         self.tree_analise.heading("produto", text="Cód. Produto"); self.tree_analise.column("produto", width=120, anchor=CENTER)
+        self.tree_analise.heading("qtd", text="Qtd."); self.tree_analise.column("qtd", width=50, anchor=CENTER) # Nova coluna
         self.tree_analise.heading("data", text="Data Nota"); self.tree_analise.column("data", width=100, anchor=CENTER)
         self.tree_analise.heading("ressarcimento", text="Ressarcimento"); self.tree_analise.column("ressarcimento", width=100, anchor=CENTER)
+        
         self.tree_analise.pack(side=LEFT, fill=BOTH, expand=YES)
-        v_scroll = ttk.Scrollbar(lista_frame, orient=VERTICAL, command=self.tree_analise.yview); v_scroll.pack(side=RIGHT, fill=Y)
+        v_scroll = ttk.Scrollbar(lista_frame, orient=VERTICAL, command=self.tree_analise.yview)
+        v_scroll.pack(side=RIGHT, fill=Y)
         self.tree_analise.configure(yscrollcommand=v_scroll.set)
         self.tree_analise.bind("<<TreeviewSelect>>", self._on_item_select)
 
@@ -68,23 +75,23 @@ class AnaliseTab(ttk.Frame):
 
     def carregar_itens_pendentes(self):
         for i in self.tree_analise.get_children(): self.tree_analise.delete(i)
+        
         itens = garantia_repository.find_itens_pendentes()
         for item in itens:
             data_formatada = datetime.strptime(item['data_nota'], '%Y-%m-%d').strftime('%d/%m/%Y')
-            ressarcimento_str = f"R$ {float(item['ressarcimento']):.2f}" if item.get('ressarcimento') and item['ressarcimento'].replace('.','',1).isdigit() else "-"
+            ressarcimento_str = f"R$ {float(item['ressarcimento']):.2f}" if item.get('ressarcimento') and str(item['ressarcimento']).replace('.','',1).isdigit() else "-"
             
-            # --- CORREÇÃO AQUI ---
-            # Trocado item['nome_cliente'] para item['cliente'] para corresponder ao banco de dados
             self.tree_analise.insert("", END, values=(
                 item['id'], 
                 item['codigo_analise'], 
                 item['numero_nota'], 
-                item['cliente'], # <-- ALTERADO AQUI
-                item['codigo_produto'], 
+                item['cliente'], 
+                item['codigo_produto'],
+                item['quantidade'], # <-- Valor da nova coluna
                 data_formatada, 
                 ressarcimento_str
             ))
-            
+
     def _on_item_select(self, event=None):
         selecionado = self.tree_analise.focus()
         if not selecionado: return
@@ -103,7 +110,7 @@ class AnaliseTab(ttk.Frame):
         
         self.analise_desc_avaria_entry.config(state="normal"); self.analise_desc_avaria_entry.delete(0, END); self.analise_desc_avaria_entry.insert(0, info.get('descricao', '')); self.analise_desc_avaria_entry.config(state="readonly")
         
-        style = "default";
+        style = "default"
         if classificacao == "Procedente": style = "success"
         elif classificacao == "Improcedente": style = "danger"
         self.analise_status_label.config(text=f"Status: {classificacao}", bootstyle=style)
@@ -113,7 +120,7 @@ class AnaliseTab(ttk.Frame):
         campos = {'Nº de Série': self.analise_serie_entry.get(), 'Cód. Avaria': self.analise_avaria_combo.get(), 'Origem': self.analise_origem_combo.get(), 'Fornecedor': self.analise_fornecedor_entry.get()}
         for nome, valor in campos.items():
             if not valor.strip():
-                Messagebox.show_error(f"O campo '{nome}' é obrigatório.", "Erro de Validação"); return
+                Messagebox.showerror(f"O campo '{nome}' é obrigatório.", "Erro de Validação"); return
         
         cod_avaria = campos['Cód. Avaria']
         dados = {
@@ -125,11 +132,11 @@ class AnaliseTab(ttk.Frame):
         
         sucesso, msg = self.service.salvar_analise(self.id_item_selecionado, dados)
         if sucesso:
-            Messagebox.show_info(msg, "Sucesso")
+            Messagebox.showinfo(msg, "Sucesso")
             self._limpar_form()
             self.main_app.notificar_atualizacao()
         else:
-            Messagebox.show_error(msg, "Erro")
+            Messagebox.showerror(msg, "Erro")
 
     def _set_form_state(self, state):
         for widget in self.form_frame.winfo_children():

@@ -178,30 +178,66 @@ class GestaoTab(ttk.Frame):
         self.atualizar_visualizacao()
     
     def _criar_view_tabela(self):
-        self.frame_tabela = ttk.Frame(self.container)
-        
-        # O container da tabela agora tem duas partes: a tabela e o frame de ações abaixo
-        tabela_container = ttk.Frame(self.frame_tabela)
-        tabela_container.pack(fill=BOTH, expand=YES)
-        
-        cols = ('id', 'data_lancamento', 'numero_nota', 'data_nota', 'cnpj', 'cliente', 'grupo_cliente', 'cidade', 'estado', 'regioes', 'codigo_analise', 'codigo_produto', 'grupo_estoque', 'codigo_avaria', 'descricao_tecnica', 'valor_item', 'status', 'procedente_improcedente', 'ressarcimento', 'numero_serie', 'fornecedor')
-        self.tree_gestao = ttk.Treeview(tabela_container, columns=cols, show='headings')
-        self.headings = {'id': ('ID', 40), 'data_lancamento': ('Data Lanç', 90), 'numero_nota': ('Nº Nota', 80), 'data_nota': ('Data Nota', 90), 'cnpj': ('CNPJ', 110), 'cliente': ('Cliente', 200), 'grupo_cliente': ('Grupo Cliente', 100), 'cidade': ('Cidade', 120), 'estado': ('Estado', 50), 'regioes': ('Região', 100), 'codigo_analise': ('Cód. Análise', 90), 'codigo_produto': ('Cód. Produto', 90), 'grupo_estoque': ('Grupo Estoque', 110), 'codigo_avaria': ('Cód. Avaria', 80), 'descricao_tecnica': ('Desc. Técnica', 200), 'valor_item': ('Valor', 80), 'status': ('Status', 110), 'procedente_improcedente': ('Procedência', 100), 'ressarcimento': ('Ressarcimento', 100), 'numero_serie': ('Nº Série', 80), 'fornecedor': ('Fornecedor', 120)}
-        for col, (text, width) in self.headings.items():
-            self.tree_gestao.heading(col, text=text)
-            self.tree_gestao.column(col, width=width, anchor=CENTER)
-        v_scroll = ttk.Scrollbar(tabela_container, orient=VERTICAL, command=self.tree_gestao.yview); v_scroll.pack(side=RIGHT, fill=Y)
-        h_scroll = ttk.Scrollbar(tabela_container, orient=HORIZONTAL, command=self.tree_gestao.xview); h_scroll.pack(side=BOTTOM, fill=X)
-        self.tree_gestao.configure(yscrollcommand=v_scroll.set, xscrollcommand=h_scroll.set)
-        self.tree_gestao.pack(fill=BOTH, expand=YES)
+            self.frame_tabela = ttk.Frame(self.container)
+            
+            # O container da tabela agora tem duas partes: a tabela e o frame de ações abaixo
+            tabela_container = ttk.Frame(self.frame_tabela)
+            tabela_container.pack(fill=BOTH, expand=YES)
+            
+            ## --- COLUNA ADICIONADA A 'cols' --- ##
+            cols = (
+                'id', 'data_lancamento', 'numero_nota', 'data_nota', 'cnpj', 'cliente', 
+                'grupo_cliente', 'cidade', 'estado', 'regioes', 'codigo_analise', 
+                'codigo_produto', 'grupo_estoque', 'codigo_avaria', 'descricao_tecnica', 
+                'valor_item', 'status', 'procedente_improcedente', 'ressarcimento', 
+                'numero_serie', 'fornecedor', 'notas_retorno'
+            )
+            
+            self.tree_gestao = ttk.Treeview(tabela_container, columns=cols, show='headings')
+            
+            ## --- COLUNA ADICIONADA A 'headings' --- ##
+            self.headings = {
+                'id': ('ID', 40), 
+                'data_lancamento': ('Data Lanç', 90), 
+                'numero_nota': ('Nº Nota', 80),
+                'data_nota': ('Data Nota', 90), 
+                'cnpj': ('CNPJ', 110), 
+                'cliente': ('Cliente', 200),
+                'grupo_cliente': ('Grupo Cliente', 100), 
+                'cidade': ('Cidade', 120),
+                'estado': ('Estado', 50),
+                'regioes': ('Região', 100),
+                'codigo_analise': ('Cód. Análise', 90),
+                'codigo_produto': ('Cód. Produto', 90), 
+                'grupo_estoque': ('Grupo Estoque', 110),
+                'codigo_avaria': ('Cód. Avaria', 80), 
+                'descricao_tecnica': ('Desc. Técnica', 200),
+                'valor_item': ('Valor', 80), 
+                'status': ('Status', 110),
+                'procedente_improcedente': ('Procedência', 100), 
+                'ressarcimento': ('Ressarcimento', 100),
+                'numero_serie': ('Nº Série', 80), 
+                'fornecedor': ('Fornecedor', 120),
+                'notas_retorno': ('Nota de Retorno', 120) # <-- NOVA COLUNA
+            }
+            
+            for col, (text, width) in self.headings.items():
+                self.tree_gestao.heading(col, text=text)
+                self.tree_gestao.column(col, width=width, anchor=CENTER)
 
-        ## ADICIONADO: Frame na parte inferior da tabela para conter o botão
-        acoes_frame = ttk.Frame(self.frame_tabela)
-        acoes_frame.pack(fill=X, pady=(10, 0))
+            # Scrollbars
+            v_scroll = ttk.Scrollbar(tabela_container, orient=VERTICAL, command=self.tree_gestao.yview)
+            v_scroll.pack(side=RIGHT, fill=Y)
+            h_scroll = ttk.Scrollbar(tabela_container, orient=HORIZONTAL, command=self.tree_gestao.xview)
+            h_scroll.pack(side=BOTTOM, fill=X)
+            self.tree_gestao.configure(yscrollcommand=v_scroll.set, xscrollcommand=h_scroll.set)
+            self.tree_gestao.pack(fill=BOTH, expand=YES)
 
-        ## ADICIONADO: O botão de exportação agora é criado e posicionado aqui
-        self.btn_exportar_excel = ttk.Button(acoes_frame, text="Extrair para Excel", command=self._exportar_para_excel, bootstyle="success")
-        self.btn_exportar_excel.pack(side=RIGHT) # Alinhado à direita
+            # Botão de exportação
+            acoes_frame = ttk.Frame(self.frame_tabela)
+            acoes_frame.pack(fill=X, pady=(10, 0))
+            self.btn_exportar_excel = ttk.Button(acoes_frame, text="Extrair para Excel", command=self._exportar_para_excel, bootstyle="success")
+            self.btn_exportar_excel.pack(side=RIGHT)
 
     # O resto do arquivo permanece o mesmo
     def carregar_dados_iniciais(self):

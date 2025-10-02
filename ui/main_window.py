@@ -1,3 +1,4 @@
+# ui/main_window.py
 import tkinter as tk
 from tkinter import ttk
 import ttkbootstrap as ttkb
@@ -6,6 +7,7 @@ from .tabs.tab_lancamento import LancamentoTab
 from .tabs.tab_analise import AnaliseTab
 from .tabs.tab_visualizacao import VisualizacaoTab
 from .tabs.tab_gestao import GestaoTab
+from .tabs.tab_retorno import RetornoTab # <-- 1. IMPORTAR A NOVA ABA
 
 class App(ttkb.Window):
     def __init__(self, title="Sistema de Gestão de Garantias", size=(1300, 800), **kwargs):
@@ -15,14 +17,15 @@ class App(ttkb.Window):
         notebook = ttk.Notebook(self)
         notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        # Cada aba é agora uma classe separada, recebendo o notebook como pai e a instância da App como master_app
         self.lancamento_tab = LancamentoTab(notebook, self)
         self.analise_tab = AnaliseTab(notebook, self)
         self.visualizacao_tab = VisualizacaoTab(notebook, self)
         self.gestao_tab = GestaoTab(notebook, self)
+        self.retorno_tab = RetornoTab(notebook, self) # <-- 2. CRIAR A INSTÂNCIA DA NOVA ABA
 
-        notebook.add(self.lancamento_tab, text='  Lançamento de Nota Fiscal  ')
+        notebook.add(self.lancamento_tab, text='  Lançamento de Garantia  ')
         notebook.add(self.analise_tab, text='  Análise de Garantia  ')
+        notebook.add(self.retorno_tab, text='  Lançamento de Retorno  ') # <-- 3. ADICIONAR AO NOTEBOOK
         notebook.add(self.visualizacao_tab, text='  Visualizar Garantias  ')
         notebook.add(self.gestao_tab, text='  Gestão de Dados  ')
 
@@ -39,6 +42,7 @@ class App(ttkb.Window):
         self.analise_tab.carregar_dados_iniciais()
         self.visualizacao_tab.carregar_dados_iniciais()
         self.gestao_tab.carregar_dados_iniciais()
+        # A nova aba não precisa de um carregamento inicial de dados
 
     def notificar_atualizacao(self):
         """Notifica todas as abas que uma atualização de dados ocorreu."""

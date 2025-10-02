@@ -3,13 +3,16 @@ import sqlite3
 from config import DB_NAME
 
 def criar_banco_de_dados():
-    """Cria a estrutura inicial do banco de dados com a nova estrutura da tabela Clientes."""
+    """
+    Cria a estrutura COMPLETA e FINAL do banco de dados do zero.
+    Este script contém o esquema para todos os módulos (Garantia e Retorno).
+    """
     try:
         with sqlite3.connect(DB_NAME) as conn:
             cursor = conn.cursor()
             print(f"Banco de dados '{DB_NAME}' conectado com sucesso.")
 
-            # Tabela 1: Empresas (Mantenha o conteúdo original)
+            # Tabela 1: Empresas
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS Empresas (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -18,7 +21,7 @@ def criar_banco_de_dados():
                 )
             ''')
 
-            # Tabela 2: Clientes (Com a nova estrutura definitiva)
+            # Tabela 2: Clientes
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS Clientes (
                     cnpj TEXT PRIMARY KEY,
@@ -31,7 +34,7 @@ def criar_banco_de_dados():
                 )
             ''')
 
-            # Tabela 3: Produtos (Mantenha o conteúdo original)
+            # Tabela 3: Produtos
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS Produtos (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -41,7 +44,7 @@ def criar_banco_de_dados():
                 )
             ''')
 
-            # Tabela 4: Códigos de Avaria (Mantenha o conteúdo original)
+            # Tabela 4: Códigos de Avaria
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS CodigosAvaria (
                     codigo_avaria TEXT PRIMARY KEY,
@@ -50,8 +53,8 @@ def criar_banco_de_dados():
                     grupo_relacionado TEXT
                 )
             ''')
-            
-            # Tabela 5: Notas Fiscais (Mantenha o conteúdo original)
+
+            # Tabela 5: Notas Fiscais de Garantia
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS NotasFiscais (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -63,12 +66,13 @@ def criar_banco_de_dados():
                 )
             ''')
 
-            # Tabela 6: Itens da Garantia (Mantenha o conteúdo original)
+            # Tabela 6: Itens da Garantia (VERSÃO FINAL E COMPLETA)
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS ItensGarantia (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     id_nota_fiscal INTEGER,
                     codigo_produto TEXT,
+                    quantidade INTEGER,
                     valor_item REAL,
                     status TEXT DEFAULT 'Pendente de Análise',
                     codigo_analise TEXT,
@@ -79,18 +83,53 @@ def criar_banco_de_dados():
                     produzido_revenda TEXT,
                     fornecedor TEXT,
                     ressarcimento TEXT,
+                    status_retorno TEXT DEFAULT 'Aguardando',
+                    quantidade_retornada INTEGER DEFAULT 0,
                     FOREIGN KEY (id_nota_fiscal) REFERENCES NotasFiscais (id) ON DELETE CASCADE,
                     FOREIGN KEY (codigo_produto) REFERENCES Produtos (codigo_item),
-                    -- ALTERADO DE 'REFERENCES CodigosAvaria (codigo)'
                     FOREIGN KEY (codigo_avaria) REFERENCES CodigosAvaria (codigo_avaria)
                 )
             ''')
 
+            # Tabela 7: Notas Fiscais de Retorno
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS NotasRetorno (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    numero_nota TEXT UNIQUE,
+                    data_emissao TEXT,
+                    tipo_retorno TEXT,
+                    texto_referencia TEXT
+                )
+            ''')
+
+            # Tabela 8: Itens das Notas de Retorno
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS ItensRetorno (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    id_nota_retorno INTEGER,
+                    codigo_produto TEXT,
+                    quantidade INTEGER,
+                    FOREIGN KEY (id_nota_retorno) REFERENCES NotasRetorno (id)
+                )
+            ''')
+
+            # Tabela 9: Tabela de Ligação entre Retorno e Garantia Original
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS LinkRetornoGarantia (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    id_item_retorno INTEGER,
+                    id_item_garantia_original INTEGER,
+                    quantidade_vinculada INTEGER,
+                    FOREIGN KEY (id_item_retorno) REFERENCES ItensRetorno (id),
+                    FOREIGN KEY (id_item_garantia_original) REFERENCES ItensGarantia (id)
+                )
+            ''')
+
             conn.commit()
-            print("Estrutura do banco de dados verificada/criada com sucesso!")
+            print("Estrutura completa do banco de dados criada com sucesso!")
 
     except sqlite3.Error as e:
-        print(f"Ocorreu um erro com o banco de dados: {e}")
+        print(f"Ocorreu um erro ao criar o banco de dados: {e}")
 
 if __name__ == "__main__":
     criar_banco_de_dados()
