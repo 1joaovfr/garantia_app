@@ -1,3 +1,4 @@
+# ui/tabs/tab_gestao.py
 import tkinter as tk
 from tkinter import ttk
 import ttkbootstrap as ttkb
@@ -10,6 +11,7 @@ from repository import garantia_repository, cliente_repository, produto_reposito
 class GestaoTab(ttk.Frame):
     def __init__(self, parent_notebook, main_app):
         super().__init__(parent_notebook, padding=(10))
+        self.main_app = main_app # <--- ESTA É A LINHA QUE FALTAVA E CAUSA O ERRO
         self.service = DashboardService()
         self.current_view = None
         self._criar_widgets()
@@ -85,10 +87,12 @@ class GestaoTab(ttk.Frame):
 
     def _criar_view_tabela(self):
         self.frame_tabela = ttk.Frame(self.container)
-        cols = ('id', 'data_lanc', 'num_nota', 'data_nota', 'cnpj', 'cliente', 'grupo_cliente', 'cod_analise', 'cod_produto', 'grupo_estoque', 'cod_avaria', 'valor', 'status', 'procedencia', 'ressarcimento', 'num_serie', 'fornecedor')
+        cols = ('id', 'data_lancamento', 'numero_nota', 'data_nota', 'cnpj', 'cliente', 'grupo_cliente', 'codigo_analise', 'codigo_produto', 'grupo_estoque', 'codigo_avaria', 'valor_item', 'status', 'procedente_improcedente', 'ressarcimento', 'numero_serie', 'fornecedor')
         self.tree_gestao = ttk.Treeview(self.frame_tabela, columns=cols, show='headings')
-        headings = {'id': ('ID', 40), 'data_lanc': ('Data Lanç', 90), 'num_nota': ('Nº Nota', 80), 'data_nota': ('Data Nota', 90), 'cnpj': ('CNPJ', 110), 'cliente': ('Cliente', 200), 'grupo_cliente': ('Grupo Cliente', 100), 'cod_analise': ('Cód. Análise', 90), 'cod_produto': ('Cód. Produto', 90), 'grupo_estoque': ('Grupo Estoque', 110), 'cod_avaria': ('Cód. Avaria', 80), 'valor': ('Valor', 80), 'status': ('Status', 110), 'procedencia': ('Procedência', 100), 'ressarcimento': ('Ressarcimento', 100), 'num_serie': ('Nº Série', 80), 'fornecedor': ('Fornecedor', 120)}
-        for col, (text, width) in headings.items(): self.tree_gestao.heading(col, text=text); self.tree_gestao.column(col, width=width, anchor=CENTER)
+        headings = {'id': ('ID', 40), 'data_lancamento': ('Data Lanç', 90), 'numero_nota': ('Nº Nota', 80), 'data_nota': ('Data Nota', 90), 'cnpj': ('CNPJ', 110), 'cliente': ('Cliente', 200), 'grupo_cliente': ('Grupo Cliente', 100), 'codigo_analise': ('Cód. Análise', 90), 'codigo_produto': ('Cód. Produto', 90), 'grupo_estoque': ('Grupo Estoque', 110), 'codigo_avaria': ('Cód. Avaria', 80), 'valor_item': ('Valor', 80), 'status': ('Status', 110), 'procedente_improcedente': ('Procedência', 100), 'ressarcimento': ('Ressarcimento', 100), 'numero_serie': ('Nº Série', 80), 'fornecedor': ('Fornecedor', 120)}
+        for col, (text, width) in headings.items():
+            self.tree_gestao.heading(col, text=text)
+            self.tree_gestao.column(col, width=width, anchor=CENTER)
         v_scroll = ttk.Scrollbar(self.frame_tabela, orient=VERTICAL, command=self.tree_gestao.yview); v_scroll.pack(side=RIGHT, fill=Y)
         h_scroll = ttk.Scrollbar(self.frame_tabela, orient=HORIZONTAL, command=self.tree_gestao.xview); h_scroll.pack(side=BOTTOM, fill=X)
         self.tree_gestao.configure(yscrollcommand=v_scroll.set, xscrollcommand=h_scroll.set)
@@ -151,26 +155,23 @@ class GestaoTab(ttk.Frame):
         return label
 
     def _desenhar_grafico(self, parent_frame, sizes, labels, colors):
-            for widget in parent_frame.winfo_children(): widget.destroy()
-            
-            non_zero_data = [(size, label, color) for size, label, color in zip(sizes, labels, colors) if size > 0]
-            if not non_zero_data:
-                ttk.Label(parent_frame, text="Não há dados para exibir.").pack(pady=20, expand=YES)
-                return
+        for widget in parent_frame.winfo_children(): widget.destroy()
+        
+        non_zero_data = [(size, label, color) for size, label, color in zip(sizes, labels, colors) if size > 0]
+        if not non_zero_data:
+            ttk.Label(parent_frame, text="Não há dados para exibir.").pack(pady=20, expand=YES)
+            return
 
-            sizes, labels, colors = zip(*non_zero_data)
-            fig, ax = plt.subplots(figsize=(6, 6), dpi=100)
-            
-            # --- CORREÇÃO AQUI ---
-            # Alterado de self.master para self.main_app para acessar o estilo da janela principal
-            fig.patch.set_facecolor(self.main_app.style.colors.bg)
-            ax.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90, 
-                wedgeprops={'edgecolor': 'white'}, 
-                # --- E AQUI ---
-                textprops={'color': self.main_app.style.colors.fg}) # Também ajustado para self.main_app
-            
-            ax.axis('equal'); fig.tight_layout()
-            
-            canvas = FigureCanvasTkAgg(fig, master=parent_frame)
-            canvas.draw()
-            canvas.get_tk_widget().pack(expand=YES)
+        sizes, labels, colors = zip(*non_zero_data)
+        fig, ax = plt.subplots(figsize=(6, 6), dpi=100)
+        
+        fig.patch.set_facecolor(self.main_app.style.colors.bg)
+        ax.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90, 
+               wedgeprops={'edgecolor': 'white'}, 
+               textprops={'color': self.main_app.style.colors.fg})
+        
+        ax.axis('equal'); fig.tight_layout()
+        
+        canvas = FigureCanvasTkAgg(fig, master=parent_frame)
+        canvas.draw()
+        canvas.get_tk_widget().pack(expand=YES)
