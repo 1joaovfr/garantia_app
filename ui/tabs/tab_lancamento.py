@@ -12,40 +12,49 @@ class LancamentoTab(ttk.Frame):
         self.main_app = main_app
         self.service = GarantiaService()
         self.itens_nota = []
-        self._criar_widgets()
+        self.empresas_map = {} # Dicionário para guardar os nomes das empresas
+        self._create_widgets()
 
-    def _criar_widgets(self):
+    def _create_widgets(self):
         main_frame = ttk.Frame(self)
         main_frame.pack(fill=BOTH, expand=YES)
-        ttk.Label(main_frame, text="Lançamento de Nota Fiscal", font=("Helvetica", 16, "bold")).pack(pady=(0, 20), anchor="w")
-
-        # Dados da Nota
+        
         dados_nota_frame = ttk.LabelFrame(main_frame, text="Dados do Cliente e Nota Fiscal", padding=15)
         dados_nota_frame.pack(fill=X, pady=(0, 10))
-        dados_nota_frame.columnconfigure((1, 3), weight=1)
         
+        dados_nota_frame.columnconfigure(2, weight=1) # A coluna 2 (nome da empresa) se expande
+        dados_nota_frame.columnconfigure(4, weight=1) # A coluna 4 (campos de nota) se expande
+        
+        # Linha 0: Empresa
         ttk.Label(dados_nota_frame, text="Empresa:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
-        self.empresa_combo = ttk.Combobox(dados_nota_frame, state="readonly")
-        self.empresa_combo.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
-        
+        self.empresa_combo = ttk.Combobox(dados_nota_frame, state="readonly", width=10)
+        self.empresa_combo.grid(row=0, column=1, padx=5, pady=5, sticky="w")
+        self.empresa_combo.bind("<<ComboboxSelected>>", self._on_empresa_select)
+
+        self.nome_empresa_entry = ttk.Entry(dados_nota_frame, state="readonly")
+        self.nome_empresa_entry.grid(row=0, column=2, padx=5, pady=5, sticky="ew")
+
+        # Linha 1: CNPJ
         ttk.Label(dados_nota_frame, text="CNPJ:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
         self.cnpj_entry = ttk.Entry(dados_nota_frame)
-        self.cnpj_entry.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
+        self.cnpj_entry.grid(row=1, column=1, columnspan=2, padx=5, pady=5, sticky="ew")
         self.cnpj_entry.bind("<FocusOut>", self._buscar_cliente)
         self.cnpj_entry.bind("<Return>", self._buscar_cliente)
         
+        # Linha 2: Nome Cliente
         ttk.Label(dados_nota_frame, text="Nome Cliente:").grid(row=2, column=0, padx=5, pady=5, sticky="w")
         self.razao_social_entry = ttk.Entry(dados_nota_frame, state="readonly")
-        self.razao_social_entry.grid(row=2, column=1, columnspan=3, padx=5, pady=5, sticky="ew")
+        self.razao_social_entry.grid(row=2, column=1, columnspan=4, padx=5, pady=5, sticky="ew")
 
-        ttk.Label(dados_nota_frame, text="Nº da Nota:").grid(row=0, column=2, padx=(20, 5), pady=5, sticky="w")
+        # Coluna da direita (Nº da Nota e Data)
+        ttk.Label(dados_nota_frame, text="Nº da Nota:").grid(row=0, column=3, padx=(20, 5), pady=5, sticky="w")
         self.num_nota_entry = ttk.Entry(dados_nota_frame)
-        self.num_nota_entry.grid(row=0, column=3, padx=5, pady=5, sticky="ew")
+        self.num_nota_entry.grid(row=0, column=4, padx=5, pady=5, sticky="ew")
         
-        ttk.Label(dados_nota_frame, text="Data da Nota:").grid(row=1, column=2, padx=(20, 5), pady=5, sticky="w")
+        ttk.Label(dados_nota_frame, text="Data da Nota:").grid(row=1, column=3, padx=(20, 5), pady=5, sticky="w")
         self.data_nota_entry = ttkb.DateEntry(dados_nota_frame, bootstyle="primary", dateformat="%d/%m/%Y")
-        self.data_nota_entry.grid(row=1, column=3, padx=5, pady=5, sticky="ew")
-
+        self.data_nota_entry.grid(row=1, column=4, padx=5, pady=5, sticky="ew")
+        
         # Adicionar Itens
         add_item_frame = ttk.LabelFrame(main_frame, text="Adicionar Itens à Nota", padding=15)
         add_item_frame.pack(fill=X, pady=10)
@@ -75,23 +84,38 @@ class LancamentoTab(ttk.Frame):
         # Botões Ações
         acoes_frame = ttk.Frame(main_frame)
         acoes_frame.pack(fill=X, pady=(10, 0))
-        ttk.Button(acoes_frame, text="Guardar Nota Fiscal", command=self._salvar_nota_fiscal, bootstyle="primary").pack(side=RIGHT, padx=5)
+        ttk.Button(acoes_frame, text="Salvar Nota Fiscal", command=self._salvar_nota_fiscal, bootstyle="primary").pack(side=RIGHT, padx=5)
         ttk.Button(acoes_frame, text="Limpar Campos", command=self._limpar_tela, bootstyle="secondary-outline").pack(side=RIGHT, padx=5)
 
     def carregar_dados_iniciais(self):
-        empresas = empresa_repository.get_all_codigos()
-        self.empresa_combo['values'] = empresas
-        if empresas: self.empresa_combo.set(empresas[0])
+        """Carrega os dados iniciais e popula o combobox de empresas."""
+        self.empresas_map = empresa_repository.get_all_as_dict()
+        codigos_empresas = list(self.empresas_map.keys())
+        
+        self.empresa_combo['values'] = codigos_empresas
+        if codigos_empresas:
+            self.empresa_combo.set(codigos_empresas[0])
+            self._on_empresa_select()
+
+    ## --- FUNÇÃO QUE FALTAVA --- ##
+    def _on_empresa_select(self, event=None):
+        """Chamada quando uma nova empresa é selecionada no Combobox."""
+        codigo_selecionado = self.empresa_combo.get()
+        nome_empresa = self.empresas_map.get(codigo_selecionado, "Não encontrada")
+
+        self.nome_empresa_entry.config(state="normal")
+        self.nome_empresa_entry.delete(0, END)
+        self.nome_empresa_entry.insert(0, nome_empresa)
+        self.nome_empresa_entry.config(state="readonly")
 
     def _buscar_cliente(self, event=None):
         cnpj = self.cnpj_entry.get().strip()
         if not cnpj: return
-        cliente = cliente_repository.find_by_cnpj(cnpj)
-        # Alterado de 'nome_cliente' para 'cliente'
-        nome = cliente['cliente'] if cliente else "CNPJ não encontrado!"
+        cliente_data = cliente_repository.find_by_cnpj(cnpj)
+        nome_cliente = cliente_data['cliente'] if cliente_data else "CNPJ não encontrado!"
         self.razao_social_entry.config(state="normal")
         self.razao_social_entry.delete(0, END)
-        self.razao_social_entry.insert(0, nome)
+        self.razao_social_entry.insert(0, nome_cliente)
         self.razao_social_entry.config(state="readonly")
 
     def _toggle_ressarcimento_entry(self):
@@ -104,31 +128,55 @@ class LancamentoTab(ttk.Frame):
             self.ressarc_entry.delete(0, END)
 
     def _adicionar_item_lista(self):
-        codigo, qtd_str, valor_str = self.item_entry.get().strip(), self.qtd_entry.get().strip(), self.valor_entry.get().strip().replace(',', '.')
+        codigo = self.item_entry.get().strip()
+        qtd_str = self.qtd_entry.get().strip()
+        valor_str = self.valor_entry.get().strip().replace(',', '.')
+        
         if not all([codigo, qtd_str, valor_str]):
-            Messagebox.show_error("Preencha todos os campos do item.", "Erro de Validação"); return
+            Messagebox.show_error("Preencha todos os campos do item.", "Erro de Validação")
+            return
         if not produto_repository.exists_by_codigo(codigo):
-            Messagebox.show_error(f"O código de item '{codigo}' não foi encontrado.", "Item Inválido"); return
+            Messagebox.show_error(f"O código de item '{codigo}' não foi encontrado.", "Item Inválido")
+            return
         try:
-            qtd, valor = int(qtd_str), float(valor_str)
-            ressarcimento, ressarcimento_str = None, "-"
+            qtd = int(qtd_str)
+            valor = float(valor_str)
+            
+            ressarcimento = None
+            ressarcimento_str = "-"
             if self.ressarc_check_var.get():
                 ressarc_val_str = self.ressarc_entry.get().strip().replace(',', '.')
                 if not ressarc_val_str:
-                    Messagebox.show_error("O valor de ressarcimento deve ser preenchido.", "Erro de Validação"); return
+                    Messagebox.show_error("O valor de ressarcimento deve ser preenchido.", "Erro de Validação")
+                    return
                 ressarcimento = float(ressarc_val_str)
                 ressarcimento_str = f"R$ {ressarcimento:.2f}"
-            
+
             self.tree_lancamento.insert("", END, values=(codigo, qtd, f"R$ {valor:.2f}", ressarcimento_str))
             self.itens_nota.append({"codigo": codigo, "quantidade": qtd, "valor": valor, "ressarcimento": ressarcimento})
-            self.item_entry.delete(0, END); self.qtd_entry.delete(0, END); self.valor_entry.delete(0, END)
-            self.ressarc_entry.delete(0, END); self.ressarc_check_var.set(False); self._toggle_ressarcimento_entry()
+            
+            self.item_entry.delete(0, END)
+            self.qtd_entry.delete(0, END)
+            self.valor_entry.delete(0, END)
+            self.ressarc_entry.delete(0, END)
+            self.ressarc_check_var.set(False)
+            self._toggle_ressarcimento_entry()
             self.item_entry.focus()
         except ValueError:
-            Messagebox.show_error("Quantidade e Valores devem ser números.", "Erro de Validação"); return
+            Messagebox.show_error("Quantidade e Valores devem ser números.", "Erro de Validação")
 
     def _salvar_nota_fiscal(self):
         cnpj = self.cnpj_entry.get().strip()
+        if not cliente_repository.find_by_cnpj(cnpj):
+            Messagebox.show_error("CNPJ inválido ou não registrado.", "Erro de Validação")
+            return
+        if not self.num_nota_entry.get().strip():
+            Messagebox.show_error("O campo 'Nº da Nota' é obrigatório.", "Erro de Validação")
+            return
+        if not self.itens_nota:
+            Messagebox.show_error("Adicione pelo menos um item à nota.", "Erro de Validação")
+            return
+            
         numero_nota = self.num_nota_entry.get().strip()
         data_nota = self.data_nota_entry.get_date().strftime('%Y-%m-%d')
         
@@ -139,12 +187,19 @@ class LancamentoTab(ttk.Frame):
             self._limpar_tela()
             self.main_app.notificar_atualizacao()
         else:
-            Messagebox.show_error(mensagem, "Erro ao Guardar")
+            Messagebox.show_error(mensagem, "Erro ao Salvar")
             
     def _limpar_tela(self):
-        self.cnpj_entry.delete(0, END); self.num_nota_entry.delete(0, END)
+        self.empresa_combo.set('')
+        self.nome_empresa_entry.config(state="normal"); self.nome_empresa_entry.delete(0, END); self.nome_empresa_entry.config(state="readonly")
+        self.cnpj_entry.delete(0, END)
+        self.num_nota_entry.delete(0, END)
         self.razao_social_entry.config(state="normal"); self.razao_social_entry.delete(0, END); self.razao_social_entry.config(state="readonly")
-        for i in self.tree_lancamento.get_children(): self.tree_lancamento.delete(i)
+        for i in self.tree_lancamento.get_children():
+            self.tree_lancamento.delete(i)
         self.itens_nota.clear()
-        self.ressarc_entry.delete(0, END); self.ressarc_check_var.set(False); self._toggle_ressarcimento_entry()
+        
+        self.ressarc_entry.delete(0, END)
+        self.ressarc_check_var.set(False)
+        self._toggle_ressarcimento_entry()
         self.cnpj_entry.focus()
