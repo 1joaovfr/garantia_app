@@ -23,11 +23,11 @@ class AnaliseTab(ttk.Frame):
         self.tree_analise = ttk.Treeview(lista_frame, columns=cols, show="headings", height=12)
         
         self.tree_analise.heading("id", text="ID"); self.tree_analise.column("id", width=50, anchor=CENTER)
-        self.tree_analise.heading("analise", text="Cód. Análise"); self.tree_analise.column("analise", width=100, anchor=CENTER)
-        self.tree_analise.heading("nota", text="Nº Nota"); self.tree_analise.column("nota", width=80, anchor=CENTER)
-        self.tree_analise.heading("cliente", text="Cliente"); self.tree_analise.column("cliente", width=250, anchor=CENTER)
-        self.tree_analise.heading("produto", text="Cód. Produto"); self.tree_analise.column("produto", width=120, anchor=CENTER)
-        self.tree_analise.heading("data", text="Data Nota"); self.tree_analise.column("data", width=100, anchor=CENTER)
+        self.tree_analise.heading("analise", text="Código de Análise"); self.tree_analise.column("analise", width=100, anchor=CENTER) # PADRONIZADO
+        self.tree_analise.heading("nota", text="Número da Nota"); self.tree_analise.column("nota", width=100, anchor=CENTER) # PADRONIZADO
+        self.tree_analise.heading("cliente", text="Nome do Cliente"); self.tree_analise.column("cliente", width=250, anchor=CENTER) # PADRONIZADO
+        self.tree_analise.heading("produto", text="Código do Produto"); self.tree_analise.column("produto", width=120, anchor=CENTER) # PADRONIZADO
+        self.tree_analise.heading("data", text="Data da Nota"); self.tree_analise.column("data", width=100, anchor=CENTER) # PADRONIZADO
         self.tree_analise.heading("ressarcimento", text="Ressarcimento"); self.tree_analise.column("ressarcimento", width=100, anchor=CENTER)
         
         self.tree_analise.pack(side=LEFT, fill=BOTH, expand=YES)
@@ -40,15 +40,15 @@ class AnaliseTab(ttk.Frame):
         self.form_frame.pack(fill=BOTH, expand=YES)
         self.form_frame.columnconfigure((1, 3), weight=1)
         
-        ttk.Label(self.form_frame, text="Cód. Análise:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        ttk.Label(self.form_frame, text="Código de Análise:").grid(row=0, column=0, padx=5, pady=5, sticky="w") # PADRONIZADO
         self.analise_cod_entry = ttk.Entry(self.form_frame, state="readonly"); self.analise_cod_entry.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
-        ttk.Label(self.form_frame, text="Nº de Série:").grid(row=0, column=2, padx=5, pady=5, sticky="w")
+        ttk.Label(self.form_frame, text="Número de Série:").grid(row=0, column=2, padx=5, pady=5, sticky="w") # PADRONIZADO
         self.analise_serie_entry = ttk.Entry(self.form_frame); self.analise_serie_entry.grid(row=0, column=3, padx=5, pady=5, sticky="ew")
-        ttk.Label(self.form_frame, text="Cód. Avaria:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        ttk.Label(self.form_frame, text="Código de Avaria:").grid(row=1, column=0, padx=5, pady=5, sticky="w") # PADRONIZADO
         self.analise_avaria_combo = ttk.Combobox(self.form_frame, state="readonly"); self.analise_avaria_combo.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
         self.analise_avaria_combo.bind("<<ComboboxSelected>>", self._atualizar_status_procedencia)
         self.analise_status_label = ttk.Label(self.form_frame, text="Status: -", font=("Helvetica", 10, "bold")); self.analise_status_label.grid(row=1, column=2, columnspan=2, padx=5, pady=5, sticky="w")
-        ttk.Label(self.form_frame, text="Descrição Avaria:").grid(row=2, column=0, padx=5, pady=5, sticky="w")
+        ttk.Label(self.form_frame, text="Descrição da Avaria:").grid(row=2, column=0, padx=5, pady=5, sticky="w") # PADRONIZADO
         self.analise_desc_avaria_entry = ttk.Entry(self.form_frame, state="readonly"); self.analise_desc_avaria_entry.grid(row=2, column=1, columnspan=3, padx=5, pady=5, sticky="ew")
         ttk.Label(self.form_frame, text="Origem:").grid(row=3, column=0, padx=5, pady=5, sticky="w")
         self.analise_origem_combo = ttk.Combobox(self.form_frame, state="readonly", values=["Produzido", "Revenda"]); self.analise_origem_combo.grid(row=3, column=1, padx=5, pady=5, sticky="ew")
@@ -56,7 +56,7 @@ class AnaliseTab(ttk.Frame):
         self.analise_fornecedor_entry = ttk.Entry(self.form_frame); self.analise_fornecedor_entry.grid(row=3, column=3, padx=5, pady=5, sticky="ew")
         ttk.Button(self.form_frame, text="Guardar Análise", command=self._salvar_analise, bootstyle="primary").grid(row=4, column=3, padx=5, pady=20, sticky="e")
         self._set_form_state("disabled")
-
+        
     def carregar_dados_iniciais(self):
         self.codigos_avaria_map = codigo_avaria_repository.get_all()
         self.analise_avaria_combo['values'] = list(self.codigos_avaria_map.keys())

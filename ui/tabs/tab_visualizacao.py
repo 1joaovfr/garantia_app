@@ -20,9 +20,9 @@ class VisualizacaoTab(ttk.Frame):
         filtros_frame = ttk.LabelFrame(self, text="Filtros de Pesquisa", padding=15)
         filtros_frame.pack(fill=X, pady=(0, 10))
         filtros_frame.columnconfigure((1, 3), weight=1)
-        ttk.Label(filtros_frame, text="CNPJ:").grid(row=0, column=0, padx=5, pady=5, sticky="w"); self.filtro_cnpj = ttk.Entry(filtros_frame); self.filtro_cnpj.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
-        ttk.Label(filtros_frame, text="Nome Cliente:").grid(row=0, column=2, padx=(15, 5), pady=5, sticky="w"); self.filtro_razao = ttk.Entry(filtros_frame); self.filtro_razao.grid(row=0, column=3, padx=5, pady=5, sticky="ew")
-        ttk.Label(filtros_frame, text="Nº Nota:").grid(row=1, column=0, padx=5, pady=5, sticky="w"); self.filtro_nota = ttk.Entry(filtros_frame); self.filtro_nota.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
+        ttk.Label(filtros_frame, text="CNPJ do Cliente:").grid(row=0, column=0, padx=5, pady=5, sticky="w"); self.filtro_cnpj = ttk.Entry(filtros_frame); self.filtro_cnpj.grid(row=0, column=1, padx=5, pady=5, sticky="ew") # PADRONIZADO
+        ttk.Label(filtros_frame, text="Nome do Cliente:").grid(row=0, column=2, padx=(15, 5), pady=5, sticky="w"); self.filtro_razao = ttk.Entry(filtros_frame); self.filtro_razao.grid(row=0, column=3, padx=5, pady=5, sticky="ew") # PADRONIZADO
+        ttk.Label(filtros_frame, text="Número da Nota:").grid(row=1, column=0, padx=5, pady=5, sticky="w"); self.filtro_nota = ttk.Entry(filtros_frame); self.filtro_nota.grid(row=1, column=1, padx=5, pady=5, sticky="ew") # PADRONIZADO
         ttk.Label(filtros_frame, text="Status:").grid(row=1, column=2, padx=(15, 5), pady=5, sticky="w"); self.filtro_status = ttk.Combobox(filtros_frame, state="readonly", values=["Todos", "Pendente de Análise", "Analisado"]); self.filtro_status.grid(row=1, column=3, padx=5, pady=5, sticky="ew"); self.filtro_status.set("Todos")
         btn_frame = ttk.Frame(filtros_frame); btn_frame.grid(row=0, column=4, rowspan=2, padx=(20, 5), sticky="e")
         ttk.Button(btn_frame, text="Filtrar", command=self.aplicar_filtros, bootstyle="primary").pack(fill=X, pady=2, ipady=4)
@@ -30,17 +30,16 @@ class VisualizacaoTab(ttk.Frame):
 
         lista_geral_frame = ttk.LabelFrame(self, text="Registros de Garantia (1 linha = 1 peça)", padding=15)
         lista_geral_frame.pack(fill=BOTH, expand=YES)
-
         cols = ("id", "nota", "data", "cnpj", "cliente", "analise", "produto", "valor", "status", "procedencia", "ressarcimento")
         self.tree = ttk.Treeview(lista_geral_frame, columns=cols, show="headings", selectmode="extended")
         
-        headings = {
-            "id": ("ID", 40), "nota": ("Nº Nota", 80), "data": ("Data", 80), 
-            "cnpj": ("CNPJ", 110), "cliente": ("Cliente", 180), 
-            "analise": ("Cód. Análise", 100), "produto": ("Cód. Produto", 100), 
-            "valor": ("Valor", 80), "status": ("Status", 120), 
+        headings = { 
+            "id": ("ID", 40), "nota": ("Número da Nota", 100), "data": ("Data da Nota", 100), 
+            "cnpj": ("CNPJ do Cliente", 120), "cliente": ("Nome do Cliente", 200), 
+            "analise": ("Código de Análise", 100), "produto": ("Código do Produto", 120), 
+            "valor": ("Valor do Produto", 100), "status": ("Status", 120), 
             "procedencia": ("Procedência", 100), "ressarcimento": ("Ressarcimento", 100)
-        }
+        } # PADRONIZADO
         for col, (text, width) in headings.items():
             self.tree.heading(col, text=text)
             self.tree.column(col, width=width, anchor=CENTER)

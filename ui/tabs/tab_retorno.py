@@ -15,79 +15,58 @@ class RetornoTab(ttk.Frame):
         self._create_widgets()
 
     def _create_widgets(self):
-        main_frame = ttk.Frame(self, padding=10)
-        main_frame.pack(fill=BOTH, expand=YES)
+        main_frame = ttk.Frame(self, padding=10); main_frame.pack(fill=BOTH, expand=YES)
+        main_frame.rowconfigure(0, weight=1); main_frame.columnconfigure(0, weight=2); main_frame.columnconfigure(1, weight=3)
 
-        ## --- NOVO LAYOUT COM GRID PARA PROPORÇÃO --- ##
-        # Configura o grid do frame principal para ter 2 colunas e 1 linha
-        main_frame.rowconfigure(0, weight=1)
-        main_frame.columnconfigure(0, weight=2) # Painel esquerdo com peso 2 (40%)
-        main_frame.columnconfigure(1, weight=3) # Painel direito com peso 3 (60%)
-
-        # Painel Esquerdo (agora posicionado com .grid)
         input_frame = ttk.LabelFrame(main_frame, text="1. Dados da Nota de Retorno", padding=15)
         input_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
         
-        # O conteúdo interno do painel esquerdo continua o mesmo
-        input_frame.columnconfigure(0, weight=1)
-        input_frame.rowconfigure(2, weight=1)
+        input_frame.columnconfigure(0, weight=1); input_frame.rowconfigure(2, weight=1)
+        
         general_data_frame = ttk.LabelFrame(input_frame, text="Dados Gerais")
         general_data_frame.grid(row=0, column=0, sticky="ew", pady=(0, 10))
         general_data_frame.columnconfigure(1, weight=1)
-        ttk.Label(general_data_frame, text="CNPJ do Cliente:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
-        self.cnpj_entry = ttk.Entry(general_data_frame)
-        self.cnpj_entry.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
-        self.cnpj_entry.bind("<FocusOut>", self._buscar_cliente)
-        self.cnpj_entry.bind("<Return>", self._buscar_cliente)
-        ttk.Label(general_data_frame, text="Nome do Cliente:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
-        self.nome_cliente_entry = ttk.Entry(general_data_frame, state="readonly")
-        self.nome_cliente_entry.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
-        ttk.Label(general_data_frame, text="Nº da Nota de Retorno:").grid(row=2, column=0, padx=5, pady=5, sticky="w")
-        self.num_nota_retorno_entry = ttk.Entry(general_data_frame)
-        self.num_nota_retorno_entry.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
+        ttk.Label(general_data_frame, text="CNPJ do Cliente:").grid(row=0, column=0, padx=5, pady=5, sticky="w") # PADRONIZADO
+        self.cnpj_entry = ttk.Entry(general_data_frame); self.cnpj_entry.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
+        self.cnpj_entry.bind("<FocusOut>", self._buscar_cliente); self.cnpj_entry.bind("<Return>", self._buscar_cliente)
+        ttk.Label(general_data_frame, text="Nome do Cliente:").grid(row=1, column=0, padx=5, pady=5, sticky="w") # PADRONIZADO
+        self.nome_cliente_entry = ttk.Entry(general_data_frame, state="readonly"); self.nome_cliente_entry.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
+        ttk.Label(general_data_frame, text="Número da Nota de Retorno:").grid(row=2, column=0, padx=5, pady=5, sticky="w") # PADRONIZADO
+        self.num_nota_retorno_entry = ttk.Entry(general_data_frame); self.num_nota_retorno_entry.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
 
-        ref_frame = ttk.LabelFrame(input_frame, text="Dados Adicionais (Referência)")
-        ref_frame.grid(row=1, column=0, sticky="ew", pady=(0, 10))
-        self.ref_text = tk.Text(ref_frame, height=3)
-        self.ref_text.pack(fill=X, expand=YES, padx=5, pady=5)
+        ref_frame = ttk.LabelFrame(input_frame, text="Dados Adicionais (Referência)"); ref_frame.grid(row=1, column=0, sticky="ew", pady=(0, 10))
+        self.ref_text = tk.Text(ref_frame, height=3); self.ref_text.pack(fill=X, expand=YES, padx=5, pady=5)
 
-        item_frame = ttk.LabelFrame(input_frame, text="Itens da Nota", padding=10)
-        item_frame.grid(row=2, column=0, sticky="nsew")
-        item_frame.columnconfigure(1, weight=1)
-        item_frame.rowconfigure(2, weight=1)
-        ttk.Label(item_frame, text="Cód. Produto:").grid(row=0, column=0, sticky="w", padx=(0, 5), pady=2)
-        self.item_codigo_entry = ttk.Entry(item_frame)
-        self.item_codigo_entry.grid(row=0, column=1, columnspan=2, sticky="ew", pady=2)
-        ttk.Label(item_frame, text="Quantidade:").grid(row=1, column=0, sticky="w", padx=(0, 5), pady=2)
-        self.item_qtd_entry = ttk.Entry(item_frame)
-        self.item_qtd_entry.grid(row=1, column=1, sticky="ew", pady=2, padx=(0,5))
+        item_frame = ttk.LabelFrame(input_frame, text="Itens da Nota", padding=10); item_frame.grid(row=2, column=0, sticky="nsew")
+        item_frame.columnconfigure(1, weight=1); item_frame.rowconfigure(2, weight=1)
+        ttk.Label(item_frame, text="Código do Produto:").grid(row=0, column=0, sticky="w", padx=(0, 5), pady=2) # PADRONIZADO
+        self.item_codigo_entry = ttk.Entry(item_frame); self.item_codigo_entry.grid(row=0, column=1, columnspan=2, sticky="ew", pady=2)
+        ttk.Label(item_frame, text="Quantidade:").grid(row=1, column=0, sticky="w", padx=(0, 5), pady=2) # PADRONIZADO
+        self.item_qtd_entry = ttk.Entry(item_frame); self.item_qtd_entry.grid(row=1, column=1, sticky="ew", pady=2, padx=(0,5))
         ttk.Button(item_frame, text="Adicionar", command=self._adicionar_item_retorno, bootstyle="outline").grid(row=1, column=2, pady=2)
         
-        tree_frame_left = ttk.Frame(item_frame)
-        tree_frame_left.grid(row=2, column=0, columnspan=3, sticky="nsew", pady=(10,0))
+        tree_frame_left = ttk.Frame(item_frame); tree_frame_left.grid(row=2, column=0, columnspan=3, sticky="nsew", pady=(10,0))
         scrollbar_left = ttk.Scrollbar(tree_frame_left, orient=VERTICAL)
         self.itens_retorno_tree = ttk.Treeview(tree_frame_left, columns=("codigo", "qtd"), show="headings", height=5, yscrollcommand=scrollbar_left.set)
         scrollbar_left.config(command=self.itens_retorno_tree.yview); scrollbar_left.pack(side=RIGHT, fill=Y); self.itens_retorno_tree.pack(side=LEFT, fill=BOTH, expand=YES)
-        self.itens_retorno_tree.heading("codigo", text="Cód. Produto"); self.itens_retorno_tree.column("codigo", anchor=CENTER)
-        self.itens_retorno_tree.heading("qtd", text="Quantidade"); self.itens_retorno_tree.column("qtd", anchor=CENTER)
+        self.itens_retorno_tree.heading("codigo", text="Código do Produto"); self.itens_retorno_tree.column("codigo", anchor=CENTER) # PADRONIZADO
+        self.itens_retorno_tree.heading("qtd", text="Quantidade"); self.itens_retorno_tree.column("qtd", anchor=CENTER) # PADRONIZADO
 
         ttk.Button(input_frame, text="Buscar Origens", command=self._processar_e_vincular, bootstyle="primary").grid(row=3, column=0, sticky="ew", ipady=5, pady=(10,0))
         
-        # Painel da Direita (agora posicionado com .grid)
-        linking_frame = ttk.LabelFrame(main_frame, text="2. Seleção de Peças para Devolução", padding=15)
-        linking_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 0))
-        
-        # O conteúdo interno do painel direito continua o mesmo
+        linking_frame = ttk.LabelFrame(main_frame, text="2. Seleção de Peças para Devolução", padding=15); linking_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 0))
         ttk.Label(linking_frame, text="Clique em uma linha para selecionar/desselecionar as peças para retorno.").pack(anchor=W)
+        
         tree_frame_right = ttk.Frame(linking_frame); tree_frame_right.pack(fill=BOTH, expand=YES, pady=5)
         scrollbar_right = ttk.Scrollbar(tree_frame_right, orient=VERTICAL)
         self.origem_tree = ttk.Treeview(tree_frame_right, columns=("nf_origem", "codigo", "procedencia"), show="headings", selectmode="none", yscrollcommand=scrollbar_right.set)
         scrollbar_right.config(command=self.origem_tree.yview); scrollbar_right.pack(side=RIGHT, fill=Y); self.origem_tree.pack(side=LEFT, fill=BOTH, expand=YES)
-        self.origem_tree.heading("nf_origem", text="NF Origem"); self.origem_tree.column("nf_origem", width=120, anchor=CENTER)
-        self.origem_tree.heading("codigo", text="Cód. Produto"); self.origem_tree.column("codigo", width=150)
+        self.origem_tree.heading("nf_origem", text="Nota Fiscal de Origem"); self.origem_tree.column("nf_origem", width=120, anchor=CENTER) # PADRONIZADO
+        self.origem_tree.heading("codigo", text="Código do Produto"); self.origem_tree.column("codigo", width=150) # PADRONIZADO
         self.origem_tree.heading("procedencia", text="Procedência"); self.origem_tree.column("procedencia", width=120, anchor=CENTER)
         self.origem_tree.tag_configure('selecionado', background='lightblue', foreground='black')
         self.origem_tree.bind("<Button-1>", self._on_row_toggle)
+        
         summary_frame = ttk.LabelFrame(linking_frame, text="Resumo da Vinculação", padding=10); summary_frame.pack(fill=X, pady=10)
         summary_frame.columnconfigure(1, weight=1)
         default_font_name = self.main_app.style.lookup('TLabel', 'font'); font_tamanho = 10

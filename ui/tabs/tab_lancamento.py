@@ -15,17 +15,24 @@ class LancamentoTab(ttk.Frame):
         self.empresas_map = {} # Dicionário para guardar os nomes das empresas
         self._create_widgets()
 
+class LancamentoTab(ttk.Frame):
+    def __init__(self, parent_notebook, main_app):
+        super().__init__(parent_notebook, padding=(10))
+        self.main_app = main_app
+        self.service = GarantiaService()
+        self.itens_nota = []
+        self.empresas_map = {}
+        self._create_widgets()
+
     def _create_widgets(self):
         main_frame = ttk.Frame(self)
         main_frame.pack(fill=BOTH, expand=YES)
         
         dados_nota_frame = ttk.LabelFrame(main_frame, text="Dados do Cliente e Nota Fiscal", padding=15)
         dados_nota_frame.pack(fill=X, pady=(0, 10))
+        dados_nota_frame.columnconfigure(2, weight=1)
+        dados_nota_frame.columnconfigure(4, weight=1)
         
-        dados_nota_frame.columnconfigure(2, weight=1) # A coluna 2 (nome da empresa) se expande
-        dados_nota_frame.columnconfigure(4, weight=1) # A coluna 4 (campos de nota) se expande
-        
-        # Linha 0: Empresa
         ttk.Label(dados_nota_frame, text="Empresa:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
         self.empresa_combo = ttk.Combobox(dados_nota_frame, state="readonly", width=10)
         self.empresa_combo.grid(row=0, column=1, padx=5, pady=5, sticky="w")
@@ -34,20 +41,17 @@ class LancamentoTab(ttk.Frame):
         self.nome_empresa_entry = ttk.Entry(dados_nota_frame, state="readonly")
         self.nome_empresa_entry.grid(row=0, column=2, padx=5, pady=5, sticky="ew")
 
-        # Linha 1: CNPJ
-        ttk.Label(dados_nota_frame, text="CNPJ:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        ttk.Label(dados_nota_frame, text="CNPJ do Cliente:").grid(row=1, column=0, padx=5, pady=5, sticky="w") # PADRONIZADO
         self.cnpj_entry = ttk.Entry(dados_nota_frame)
         self.cnpj_entry.grid(row=1, column=1, columnspan=2, padx=5, pady=5, sticky="ew")
         self.cnpj_entry.bind("<FocusOut>", self._buscar_cliente)
         self.cnpj_entry.bind("<Return>", self._buscar_cliente)
         
-        # Linha 2: Nome Cliente
-        ttk.Label(dados_nota_frame, text="Nome Cliente:").grid(row=2, column=0, padx=5, pady=5, sticky="w")
+        ttk.Label(dados_nota_frame, text="Nome do Cliente:").grid(row=2, column=0, padx=5, pady=5, sticky="w") # PADRONIZADO
         self.razao_social_entry = ttk.Entry(dados_nota_frame, state="readonly")
         self.razao_social_entry.grid(row=2, column=1, columnspan=4, padx=5, pady=5, sticky="ew")
 
-        # Coluna da direita (Nº da Nota e Data)
-        ttk.Label(dados_nota_frame, text="Nº da Nota:").grid(row=0, column=3, padx=(20, 5), pady=5, sticky="w")
+        ttk.Label(dados_nota_frame, text="Número da Nota:").grid(row=0, column=3, padx=(20, 5), pady=5, sticky="w") # PADRONIZADO
         self.num_nota_entry = ttk.Entry(dados_nota_frame)
         self.num_nota_entry.grid(row=0, column=4, padx=5, pady=5, sticky="ew")
         
@@ -55,14 +59,13 @@ class LancamentoTab(ttk.Frame):
         self.data_nota_entry = ttkb.DateEntry(dados_nota_frame, bootstyle="primary", dateformat="%d/%m/%Y")
         self.data_nota_entry.grid(row=1, column=4, padx=5, pady=5, sticky="ew")
         
-        # Adicionar Itens
         add_item_frame = ttk.LabelFrame(main_frame, text="Adicionar Itens à Nota", padding=15)
         add_item_frame.pack(fill=X, pady=10)
-        ttk.Label(add_item_frame, text="Cód. Item:").pack(side=LEFT, padx=(0, 5))
+        ttk.Label(add_item_frame, text="Código do Produto:").pack(side=LEFT, padx=(0, 5)) # PADRONIZADO
         self.item_entry = ttk.Entry(add_item_frame, width=15); self.item_entry.pack(side=LEFT, fill=X, expand=YES, padx=5)
-        ttk.Label(add_item_frame, text="Quantidade:").pack(side=LEFT, padx=(15, 5))
+        ttk.Label(add_item_frame, text="Quantidade:").pack(side=LEFT, padx=(15, 5)) # PADRONIZADO
         self.qtd_entry = ttk.Entry(add_item_frame, width=8); self.qtd_entry.pack(side=LEFT, fill=X, expand=YES, padx=5)
-        ttk.Label(add_item_frame, text="Valor Unitário:").pack(side=LEFT, padx=(15, 5))
+        ttk.Label(add_item_frame, text="Valor do Produto:").pack(side=LEFT, padx=(15, 5)) # PADRONIZADO
         self.valor_entry = ttk.Entry(add_item_frame, width=10); self.valor_entry.pack(side=LEFT, fill=X, expand=YES, padx=5)
         
         self.ressarc_check_var = tk.BooleanVar()
@@ -71,22 +74,20 @@ class LancamentoTab(ttk.Frame):
         self.ressarc_entry = ttk.Entry(add_item_frame, width=10)
         ttk.Button(add_item_frame, text="Adicionar Item", command=self._adicionar_item_lista, bootstyle="success").pack(side=RIGHT, padx=(20, 0))
 
-        # Treeview Itens
         lista_itens_frame = ttk.LabelFrame(main_frame, text="Itens da Nota", padding=15)
         lista_itens_frame.pack(fill=BOTH, expand=YES, pady=10)
         self.tree_lancamento = ttk.Treeview(lista_itens_frame, columns=("codigo", "quantidade", "valor_unit", "ressarcimento"), show="headings")
-        self.tree_lancamento.heading("codigo", text="Código do Item"); self.tree_lancamento.column("codigo", anchor=CENTER, width=120)
-        self.tree_lancamento.heading("quantidade", text="Quantidade"); self.tree_lancamento.column("quantidade", anchor=CENTER, width=80)
-        self.tree_lancamento.heading("valor_unit", text="Valor Unitário"); self.tree_lancamento.column("valor_unit", anchor=CENTER, width=100)
+        self.tree_lancamento.heading("codigo", text="Código do Produto"); self.tree_lancamento.column("codigo", anchor=CENTER, width=120) # PADRONIZADO
+        self.tree_lancamento.heading("quantidade", text="Quantidade"); self.tree_lancamento.column("quantidade", anchor=CENTER, width=80) # PADRONIZADO
+        self.tree_lancamento.heading("valor_unit", text="Valor do Produto"); self.tree_lancamento.column("valor_unit", anchor=CENTER, width=100) # PADRONIZADO
         self.tree_lancamento.heading("ressarcimento", text="Ressarcimento"); self.tree_lancamento.column("ressarcimento", anchor=CENTER, width=100)
         self.tree_lancamento.pack(side=LEFT, fill=BOTH, expand=YES)
         
-        # Botões Ações
         acoes_frame = ttk.Frame(main_frame)
         acoes_frame.pack(fill=X, pady=(10, 0))
         ttk.Button(acoes_frame, text="Salvar Nota Fiscal", command=self._salvar_nota_fiscal, bootstyle="primary").pack(side=RIGHT, padx=5)
         ttk.Button(acoes_frame, text="Limpar Campos", command=self._limpar_tela, bootstyle="secondary-outline").pack(side=RIGHT, padx=5)
-
+        
     def carregar_dados_iniciais(self):
         """Carrega os dados iniciais e popula o combobox de empresas."""
         self.empresas_map = empresa_repository.get_all_as_dict()
