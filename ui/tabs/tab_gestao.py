@@ -1,3 +1,5 @@
+# garantia_app/ui/tab_gestao.py
+
 import tkinter as tk
 from tkinter import ttk, filedialog
 from datetime import datetime
@@ -82,7 +84,13 @@ class GestaoTab(ttk.Frame):
         self.main_app = main_app
         self.service = DashboardService()
         self.current_view = None
-        self.lista_grupos = [] 
+        self.lista_grupos = []
+        
+        # --- [NOVO] Variáveis de estado para a paginação ---
+        self.itens_por_pagina = 100  # Define quantos itens aparecem por página
+        self.pagina_atual = 1
+        self.total_itens = 0
+        
         self._create_widgets()
 
     def _create_widgets(self):
@@ -105,7 +113,15 @@ class GestaoTab(ttk.Frame):
         self._criar_view_tabela(); self._criar_view_dashboard_geral(); self._criar_view_dashboard_ressarcimento()
 
     def _exportar_para_excel(self):
-        dados_atuais = self.service.get_dados_completos_gestao()
+        # NOTA: Para exportar TODOS os dados, esta função agora precisaria de uma lógica
+        # que chama o service.get_dados_completos_gestao() sem limit/offset.
+        # Por enquanto, ela exportará apenas a página atual.
+        # Para exportar tudo, a chamada seria:
+        # dados_atuais = self.service.get_dados_completos_gestao()
+        
+        offset = (self.pagina_atual - 1) * self.itens_por_pagina
+        dados_atuais = self.service.get_dados_completos_gestao(limit=self.itens_por_pagina, offset=offset)
+
         if not dados_atuais:
             Messagebox.show_warning("Não há dados na tabela para exportar.", "Tabela Vazia"); return
         df = pd.DataFrame(dados_atuais)
@@ -139,7 +155,9 @@ class GestaoTab(ttk.Frame):
     
     def _criar_view_tabela(self):
         self.frame_tabela = ttk.Frame(self.container)
-        tabela_container = ttk.Frame(self.frame_tabela); tabela_container.pack(fill=BOTH, expand=YES)
+        tabela_container = ttk.Frame(self.frame_tabela)
+        tabela_container.pack(fill=BOTH, expand=YES)
+        
         cols = ('id', 'data_lancamento', 'numero_nota', 'data_nota', 'cnpj', 'cliente', 'grupo_cliente', 'cidade', 'estado', 'regioes', 'codigo_analise', 'codigo_produto', 'grupo_estoque', 'codigo_avaria', 'descricao_tecnica', 'valor_item', 'status', 'procedente_improcedente', 'ressarcimento', 'numero_serie', 'fornecedor', 'notas_retorno')
         self.tree_gestao = ttk.Treeview(tabela_container, columns=cols, show='headings')
         self.headings = {
@@ -160,12 +178,26 @@ class GestaoTab(ttk.Frame):
         h_scroll = ttk.Scrollbar(tabela_container, orient=HORIZONTAL, command=self.tree_gestao.xview); h_scroll.pack(side=BOTTOM, fill=X)
         self.tree_gestao.configure(yscrollcommand=v_scroll.set, xscrollcommand=h_scroll.set)
         self.tree_gestao.pack(fill=BOTH, expand=YES)
-        acoes_frame = ttk.Frame(self.frame_tabela); acoes_frame.pack(fill=X, pady=(10, 0))
-        self.btn_exportar_excel = ttk.Button(acoes_frame, text="Extrair para Excel", command=self._exportar_para_excel, bootstyle="success")
+
+        # --- [NOVO] Frame com os controles de paginação ---
+        pagination_frame = ttk.Frame(self.frame_tabela)
+        pagination_frame.pack(fill=X, pady=(10, 0), padx=2)
+
+        self.btn_anterior = ttk.Button(pagination_frame, text="<< Anterior", command=self.pagina_anterior, state="disabled")
+        self.btn_anterior.pack(side=LEFT)
+
+        self.lbl_pagina_info = ttk.Label(pagination_frame, text="Página 1 de 1")
+        self.lbl_pagina_info.pack(side=LEFT, padx=10)
+
+        self.btn_proxima = ttk.Button(pagination_frame, text="Próxima >>", command=self.pagina_proxima, state="disabled")
+        self.btn_proxima.pack(side=LEFT)
+
+        self.btn_exportar_excel = ttk.Button(pagination_frame, text="Extrair para Excel", command=self._exportar_para_excel, bootstyle="success")
         self.btn_exportar_excel.pack(side=RIGHT)
 
     def carregar_dados_iniciais(self):
-        self.carregar_filtros(); self._mostrar_view('tabela')
+        self.carregar_filtros()
+        self._mostrar_view('tabela')
     
     def carregar_filtros(self):
         self.combo_ano['values'] = ["Todos"] + garantia_repository.get_all_available_years()
@@ -174,10 +206,11 @@ class GestaoTab(ttk.Frame):
         self._limpar_filtros()
 
     def _limpar_filtros(self):
-        self.combo_ano.set("Todos"); self.combo_mes.set("Todos")
-        self.entry_grupo.delete(0, END); self.atualizar_visualizacao()
+        self.combo_ano.set("Todos")
+        self.combo_mes.set("Todos")
+        self.entry_grupo.delete(0, END)
+        self.atualizar_visualizacao()
 
-    ## --- FUNÇÃO QUE FALTAVA --- ##
     def _mes_map(self):
         return {"Janeiro": "01", "Fevereiro": "02", "Março": "03", "Abril": "04", "Maio": "05", "Junho": "06", "Julho": "07", "Agosto": "08", "Setembro": "09", "Outubro": "10", "Novembro": "11", "Dezembro": "12"}
 
@@ -187,20 +220,52 @@ class GestaoTab(ttk.Frame):
         if self.combo_mes.get() != "Todos": filtros['mes'] = self._mes_map().get(self.combo_mes.get())
         if self.entry_grupo.get() != "": filtros['grupo'] = self.entry_grupo.get()
         return filtros
+    
+    # --- [NOVO] Métodos para a lógica da paginação ---
+    def pagina_anterior(self):
+        if self.pagina_atual > 1:
+            self.pagina_atual -= 1
+            self._atualizar_tabela()
 
+    def pagina_proxima(self):
+        total_paginas = (self.total_itens + self.itens_por_pagina - 1) // self.itens_por_pagina
+        if self.pagina_atual < total_paginas:
+            self.pagina_atual += 1
+            self._atualizar_tabela()
+    
+    def _atualizar_controles_paginacao(self):
+        total_paginas = 1 if self.total_itens == 0 else (self.total_itens + self.itens_por_pagina - 1) // self.itens_por_pagina
+        self.lbl_pagina_info.config(text=f"Página {self.pagina_atual} de {total_paginas}")
+        self.btn_anterior.config(state="normal" if self.pagina_atual > 1 else "disabled")
+        self.btn_proxima.config(state="normal" if self.pagina_atual < total_paginas else "disabled")
+
+    # --- [CORRIGIDO] Versão única e correta desta função ---
     def atualizar_visualizacao(self):
-        if self.current_view == 'tabela': self._atualizar_tabela({})
+        if self.current_view == 'tabela':
+            self.pagina_atual = 1
+            self.total_itens = self.service.get_total_itens_gestao()
+            self._atualizar_tabela()
         else:
             filtros = self._get_filtros()
-            if self.current_view == 'dashboard': self._atualizar_dashboard_geral(filtros)
-            elif self.current_view == 'ressarcimento': self._atualizar_dashboard_ressarcimento(filtros)
+            if self.current_view == 'dashboard':
+                self._atualizar_dashboard_geral(filtros)
+            elif self.current_view == 'ressarcimento':
+                self._atualizar_dashboard_ressarcimento(filtros)
     
-    def _atualizar_tabela(self, filtros):
-        for i in self.tree_gestao.get_children(): self.tree_gestao.delete(i)
-        dados = self.service.get_dados_completos_gestao() # A tabela não usa filtros
+    # --- [CORRIGIDO] Versão única e correta desta função ---
+    def _atualizar_tabela(self):
+        for i in self.tree_gestao.get_children():
+            self.tree_gestao.delete(i)
+        
+        offset = (self.pagina_atual - 1) * self.itens_por_pagina
+        dados = self.service.get_dados_completos_gestao(limit=self.itens_por_pagina, offset=offset)
+        
         for item in dados:
             self.tree_gestao.insert('', END, values=tuple(item.get(key, '-') for key in self.tree_gestao['columns']))
+            
+        self._atualizar_controles_paginacao()
 
+    # --- Métodos dos Dashboards (sem alterações) ---
     def _criar_view_dashboard_geral(self):
         self.frame_dashboard_geral = ttk.Frame(self.container)
         self.frame_dashboard_geral.columnconfigure(0, weight=1); self.frame_dashboard_geral.rowconfigure(0, weight=1)
@@ -262,83 +327,3 @@ class GestaoTab(ttk.Frame):
         ax.axis('equal'); fig.tight_layout()
         canvas = FigureCanvasTkAgg(fig, master=parent_frame)
         canvas.draw(); canvas.get_tk_widget().pack(expand=YES)
-
-        acoes_frame = ttk.Frame(self.frame_tabela)
-        acoes_frame.pack(fill=X, pady=(10, 0))
-        self.btn_exportar_excel = ttk.Button(acoes_frame, text="Extrair para Excel", command=self._exportar_para_excel, bootstyle="success")
-        self.btn_exportar_excel.pack(side=RIGHT)
-
-    def atualizar_visualizacao(self):
-        if self.current_view == 'tabela':
-            self._atualizar_tabela({})
-        else:
-            filtros = self._get_filtros()
-            if self.current_view == 'dashboard': self._atualizar_dashboard_geral(filtros)
-            elif self.current_view == 'ressarcimento': self._atualizar_dashboard_ressarcimento(filtros)
-
-    def _atualizar_tabela(self, filtros):
-        for i in self.tree_gestao.get_children(): self.tree_gestao.delete(i)
-        dados = self.service.get_dados_completos_gestao(filtros)
-        for item in dados:
-            self.tree_gestao.insert('', END, values=tuple(item.get(key, '-') for key in self.tree_gestao['columns']))
-    def _criar_view_dashboard_geral(self):
-        self.frame_dashboard_geral = ttk.Frame(self.container)
-        self.frame_dashboard_geral.columnconfigure(0, weight=1); self.frame_dashboard_geral.rowconfigure(0, weight=1)
-        self.canvas_geral_frame = ttk.LabelFrame(self.frame_dashboard_geral, text="Distribuição de Status (Geral)", padding=15); self.canvas_geral_frame.grid(row=0, column=0, sticky="nsew", padx=(0,10))
-        stats_frame = ttk.LabelFrame(self.frame_dashboard_geral, text="Resumo (Geral)", padding=15, width=350); stats_frame.grid(row=0, column=1, sticky="ns"); stats_frame.pack_propagate(False)
-        self.lbl_proc_qtd = self._create_stat_label(stats_frame, "Procedentes", "#28a745", "Quantidade: -"); self.lbl_proc_val = self._create_stat_label(stats_frame, None, None, "Valor Total: R$ -", pad_bottom=15)
-        self.lbl_impr_qtd = self._create_stat_label(stats_frame, "Improcedentes", "#dc3545", "Quantidade: -"); self.lbl_impr_val = self._create_stat_label(stats_frame, None, None, "Valor Total: R$ -", pad_bottom=15)
-        self.lbl_pend_qtd = self._create_stat_label(stats_frame, "Pendentes", "#6c757d", "Quantidade: -"); self.lbl_pend_val = self._create_stat_label(stats_frame, None, None, "Valor Total: R$ -", pad_bottom=15)
-        ttk.Separator(stats_frame, orient=HORIZONTAL).pack(fill=X, pady=10)
-        self.lbl_total_qtd = self._create_stat_label(stats_frame, "Total Recebido", "#17a2b8", "Quantidade Total: -"); self.lbl_total_val = self._create_stat_label(stats_frame, None, None, "Valor Total: R$ -")
-    def _atualizar_dashboard_geral(self, filtros):
-        stats = self.service.get_estatisticas_gerais(filtros)
-        proc_q, proc_v = stats['Procedente']['quantidade'], stats['Procedente']['valor_total']
-        impr_q, impr_v = stats['Improcedente']['quantidade'], stats['Improcedente']['valor_total']
-        pend_q, pend_v = stats['Pendente']['quantidade'], stats['Pendente']['valor_total']
-        self.lbl_proc_qtd.config(text=f"Quantidade: {proc_q}"); self.lbl_proc_val.config(text=f"Valor Total: R$ {proc_v:.2f}")
-        self.lbl_impr_qtd.config(text=f"Quantidade: {impr_q}"); self.lbl_impr_val.config(text=f"Valor Total: R$ {impr_v:.2f}")
-        self.lbl_pend_qtd.config(text=f"Quantidade: {pend_q}"); self.lbl_pend_val.config(text=f"Valor Total: R$ {pend_v:.2f}")
-        self.lbl_total_qtd.config(text=f"Quantidade Total: {proc_q + impr_q + pend_q}"); self.lbl_total_val.config(text=f"Valor Total: R$ {proc_v + impr_v + pend_v:.2f}")
-        self._desenhar_grafico(self.canvas_geral_frame, [proc_q, impr_q, pend_q], ['Procedentes', 'Improcedentes', 'Pendentes'], ['#28a745', '#dc3545', '#6c757d'])
-    def _criar_view_dashboard_ressarcimento(self):
-        self.frame_dashboard_ressarcimento = ttk.Frame(self.container)
-        self.frame_dashboard_ressarcimento.columnconfigure(0, weight=1); self.frame_dashboard_ressarcimento.rowconfigure(0, weight=1)
-        self.canvas_ressarc_frame = ttk.LabelFrame(self.frame_dashboard_ressarcimento, text="Distribuição de Ressarcimentos (Valor)", padding=15); self.canvas_ressarc_frame.grid(row=0, column=0, sticky="nsew", padx=(0,10))
-        stats_frame = ttk.LabelFrame(self.frame_dashboard_ressarcimento, text="Resumo (Ressarcimento)", padding=15, width=350); stats_frame.grid(row=0, column=1, sticky="ns"); stats_frame.pack_propagate(False)
-        self.lbl_r_proc_qtd = self._create_stat_label(stats_frame, "Procedentes", "#28a745", "Quantidade: -"); self.lbl_r_proc_val = self._create_stat_label(stats_frame, None, None, "Valor Total: R$ -", pad_bottom=15)
-        self.lbl_r_impr_qtd = self._create_stat_label(stats_frame, "Improcedentes", "#dc3545", "Quantidade: -"); self.lbl_r_impr_val = self._create_stat_label(stats_frame, None, None, "Valor Total: R$ -", pad_bottom=15)
-        self.lbl_r_pend_qtd = self._create_stat_label(stats_frame, "Pendentes", "#6c757d", "Quantidade: -"); self.lbl_r_pend_val = self._create_stat_label(stats_frame, None, None, "Valor Potencial: R$ -", pad_bottom=15)
-        ttk.Separator(stats_frame, orient=HORIZONTAL).pack(fill=X, pady=10)
-        self.lbl_r_total_qtd = self._create_stat_label(stats_frame, "Total Ressarcimento", "#17a2b8", "Quantidade Total: -"); self.lbl_r_total_val = self._create_stat_label(stats_frame, None, None, "Valor Total: R$ -")
-    def _atualizar_dashboard_ressarcimento(self, filtros):
-        stats = self.service.get_estatisticas_ressarcimento(filtros)
-        proc_q, proc_v = stats['Procedente']['quantidade'], stats['Procedente']['valor_total']
-        impr_q, impr_v = stats['Improcedente']['quantidade'], stats['Improcedente']['valor_total']
-        pend_q, pend_v = stats['Pendente']['quantidade'], stats['Pendente']['valor_total']
-        self.lbl_r_proc_qtd.config(text=f"Quantidade: {proc_q}"); self.lbl_r_proc_val.config(text=f"Valor Total: R$ {proc_v:.2f}")
-        self.lbl_r_impr_qtd.config(text=f"Quantidade: {impr_q}"); self.lbl_r_impr_val.config(text=f"Valor Total: R$ {impr_v:.2f}")
-        self.lbl_r_pend_qtd.config(text=f"Quantidade: {pend_q}"); self.lbl_r_pend_val.config(text=f"Valor Potencial: R$ {pend_v:.2f}")
-        self.lbl_r_total_qtd.config(text=f"Quantidade Total: {proc_q + pend_q}"); self.lbl_r_total_val.config(text=f"Valor Total: R$ {proc_v + impr_v + pend_v:.2f}")
-        self._desenhar_grafico(self.canvas_ressarc_frame, [proc_v, impr_v, pend_v], ['Procedentes', 'Improcedentes', 'Pendentes'], ['#28a745', '#dc3545', '#6c757d'])
-    def _create_stat_label(self, parent, title, color, text, pad_bottom=0):
-        if title: ttk.Label(parent, text=title, font=("Helvetica", 12, "bold"), foreground=color).pack(anchor='w', pady=(0, 5))
-        label = ttk.Label(parent, text=text)
-        label.pack(anchor='w', padx=10, pady=(0, pad_bottom))
-        return label
-    def _desenhar_grafico(self, parent_frame, sizes, labels, colors):
-        for widget in parent_frame.winfo_children(): widget.destroy()
-        non_zero_data = [(size, label, color) for size, label, color in zip(sizes, labels, colors) if size > 0]
-        if not non_zero_data:
-            ttk.Label(parent_frame, text="Não há dados para exibir.").pack(pady=20, expand=YES)
-            return
-        sizes, labels, colors = zip(*non_zero_data)
-        fig, ax = plt.subplots(figsize=(6, 6), dpi=100)
-        fig.patch.set_facecolor(self.main_app.style.colors.bg)
-        ax.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90, 
-               wedgeprops={'edgecolor': 'white'}, 
-               textprops={'color': self.main_app.style.colors.fg})
-        ax.axis('equal'); fig.tight_layout()
-        canvas = FigureCanvasTkAgg(fig, master=parent_frame)
-        canvas.draw()
-        canvas.get_tk_widget().pack(expand=YES)

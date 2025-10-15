@@ -37,6 +37,15 @@ class DashboardService:
                 estatisticas[cat]['valor_total'] = row['v'] or 0
         return estatisticas
 
+    def get_dados_completos_gestao(self, limit=None, offset=None):
+        # Passa os parâmetros de paginação para o repositório
+        return garantia_repository.find_all_complete_data_for_gestao(limit, offset)
+        
+    def get_total_itens_gestao(self):
+        # Chama a nova função de contagem do repositório
+        return garantia_repository.count_all_itens_gestao()
+
+
     def get_estatisticas_ressarcimento(self, filtros={}):
         row = garantia_repository.get_ressarcimento_stats(filtros)
         if row:

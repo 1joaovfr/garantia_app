@@ -132,6 +132,45 @@ def get_ressarcimento_stats(filtros={}):
         """
         cursor.execute(query, params)
         return cursor.fetchone()
+    
+def find_all_complete_data_for_gestao(limit=None, offset=None): # PARÂMETROS ADICIONADOS
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        base_query = """
+            SELECT 
+                ig.id, nf.data_lancamento, nf.numero_nota, nf.data_nota,
+                c.cnpj, c.cliente, c.grupo_cliente, c.cidade, c.estado, c.regioes, 
+                ig.codigo_analise, ig.codigo_produto, p.grupo_estoque, 
+                ig.codigo_avaria, ca.descricao_tecnica, ig.valor_item, ig.status, 
+                ig.procedente_improcedente, ig.ressarcimento, ig.numero_serie, ig.fornecedor,
+                GROUP_CONCAT(DISTINCT nr.numero_nota) AS notas_retorno
+            FROM ItensGarantia AS ig
+            LEFT JOIN NotasFiscais AS nf ON ig.id_nota_fiscal = nf.id
+            LEFT JOIN Clientes AS c ON nf.cnpj_cliente = c.cnpj
+            LEFT JOIN Produtos AS p ON ig.codigo_produto = p.codigo_item
+            LEFT JOIN CodigosAvaria AS ca ON ig.codigo_avaria = ca.codigo_avaria
+            LEFT JOIN LinkRetornoGarantia AS lrg ON ig.id = lrg.id_item_garantia_original
+            LEFT JOIN ItensRetorno AS ir ON lrg.id_item_retorno = ir.id
+            LEFT JOIN NotasRetorno AS nr ON ir.id_nota_retorno = nr.id
+            GROUP BY ig.id
+            ORDER BY nf.data_lancamento DESC, ig.id DESC
+        """
+        
+        # LÓGICA DE PAGINAÇÃO ADICIONADA
+        params = []
+        if limit is not None and offset is not None:
+            base_query += " LIMIT ? OFFSET ?"
+            params.extend([limit, offset])
+
+        cursor.execute(base_query, params)
+        return [dict(row) for row in cursor.fetchall()]
+
+# NOVA FUNÇÃO PARA CONTAR O TOTAL DE ITENS
+def count_all_itens_gestao():
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(id) FROM ItensGarantia")
+        return cursor.fetchone()[0]
 
 def save_nota_e_itens(cnpj, numero_nota, data_nota, data_lancamento, itens_com_codigo):
     with get_db_connection() as conn:
